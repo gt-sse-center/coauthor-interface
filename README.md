@@ -2,13 +2,13 @@
 
 <img src="./coauthor.png" width="350px"/>
 
-**An Open-Source Interface for Human-Language Model (LM) Interaction**
+**An Open-Source Interface for Human-AI Collaborative Writing**
 
 </div>
 
 ## Overview
 
-This repository contains the code for the **interface** of [CoAuthor](https://coauthor.stanford.edu). The interface comes in two parts: (1) the frontend presented to the users for writing and to view replays, and (2) the backend that serves requests from the frontend and queries models to generate suggestions.
+This repository contains the code for the **interface** of [CoAuthor](https://coauthor.stanford.edu). The interface comes in two parts: (1) the frontend presented to the users for writing with AI and to replay previous writing sessions, and (2) the backend that serves requests from the frontend and queries models to generate suggestions.
 
 For downloading the CoAuthor dataset and replaying its writing sessions, please visit the [website](https://coauthor.stanford.edu) instead.
 
@@ -40,7 +40,7 @@ By default, the backend is setup to support [OpenAI models](https://platform.ope
 Type the following command to clone this repository into a directory of your choice:
 
 ```
-git clone https://github.com/minggg/coauthor-interface
+git clone https://github.com/minalee-research/coauthor-interface
 ```
 
 Inside the `coauthor-interface` directory, run the following to install the required packages:
@@ -73,9 +73,9 @@ python3 api_server.py \
     --debug
 ```
 
-The backend initializes sessions using access codes that are read from `data/access\_codes.csv`. When you enter the frontend, the access code provided needs to match one of the created codes here.  
+The backend initializes sessions using access codes that are read from `./config/access_codes.csv`. When you enter the frontend, the access code provided needs to match one of the created codes here.  
 
-The choice of models, examples (prompts that are hidden from users), and prompts (prompts that are shown to users in the text editor) can be specified when you create `data/access\_codes.csv`. 
+The choice of models, examples (prompts that are hidden from users), and prompts (prompts that are shown to users in the text editor) can be specified when you create `./config/access_codes.csv`. 
 
 ---
 
