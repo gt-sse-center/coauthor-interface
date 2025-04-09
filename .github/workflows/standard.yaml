@@ -23,7 +23,6 @@ jobs:
 
       matrix:
         python_version:
-          - "3.12"
           - "3.11"
           - "3.10"
 
