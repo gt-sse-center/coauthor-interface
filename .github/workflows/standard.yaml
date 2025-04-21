@@ -33,18 +33,29 @@ jobs:
 
     permissions: {}
 
+    spermissions:
+      contents: read
+
     steps:
       - uses: actions/checkout@v4
-      - name: Set up Python
-        uses: actions/setup-python@v5
+
+      - name: Install uv and python
+        uses: astral-sh/setup-uv@v5
         with:
           python-version: ${{ matrix.python_version }}
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-      - name: Test with pytest
-        run: |
-          pip install pytest pytest-cov
-          pytest --doctest-modules --junitxml=junit/test-results.xml --cov=com --cov-report=xml --cov-report=html
-          
+          enable-cache: true
+
+      - name: Run ruff linter
+        run: uvx ruff check --verbose
+
+      - name: Validate Tests
+        run: uv run pytest
+        env:
+          COVERAGE_FILE: .coverage.${{ matrix.os }}.${{ matrix.python_version }}
+
+      - name: Upload Coverage Data
+        uses: actions/upload-artifact@v4
+        with:
+          name: .coverage.${{ matrix.os }}.${{ matrix.python_version }}
+          path: .coverage.${{ matrix.os }}.${{ matrix.python_version }}
+          include-hidden-files: true
