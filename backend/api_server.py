@@ -13,19 +13,31 @@ from time import time
 from argparse import ArgumentParser
 
 from reader import (
-    read_api_keys, read_log,
-    read_examples, read_prompts, read_blocklist,
-    read_access_codes, update_metadata,
+    read_api_keys,
+    read_log,
+    read_examples,
+    read_prompts,
+    read_blocklist,
+    read_access_codes,
+    update_metadata,
 )
 from helper import (
-    print_verbose, print_current_sessions,
-    get_uuid, retrieve_log_paths,
-    append_session_to_file, get_context_window_size,
-    save_log_to_jsonl, compute_stats, get_last_text_from_log, get_config_for_log,
+    print_verbose,
+    print_current_sessions,
+    get_uuid,
+    retrieve_log_paths,
+    append_session_to_file,
+    get_context_window_size,
+    save_log_to_jsonl,
+    compute_stats,
+    get_last_text_from_log,
+    get_config_for_log,
 )
 from parsing import (
-    parse_prompt, parse_suggestion, parse_probability,
-    filter_suggestions
+    parse_prompt,
+    parse_suggestion,
+    parse_probability,
+    filter_suggestions,
 )
 
 from flask import Flask, request, jsonify
@@ -41,8 +53,8 @@ SUCCESS = True
 FAILURE = False
 
 
-@app.route('/api/start_session', methods=['POST'])
-@cross_origin(origin='*')
+@app.route("/api/start_session", methods=["POST"])
+@cross_origin(origin="*")
 def start_session():
     content = request.json
     result = {}
@@ -54,13 +66,15 @@ def start_session():
     allowed_access_codes = read_access_codes(config_dir)
 
     # Check access codes
-    access_code = content['accessCode']
+    access_code = content["accessCode"]
     if access_code not in allowed_access_codes:
         if not access_code:
-            access_code = '(not provided)'
-        result['status'] = FAILURE
-        result['message'] = f'Invalid access code: {access_code}. Please check your access code in URL.'
-        print_current_sessions(SESSIONS, 'Invalid access code')
+            access_code = "(not provided)"
+        result["status"] = FAILURE
+        result["message"] = (
+            f"Invalid access code: {access_code}. Please check your access code in URL."
+        )
+        print_current_sessions(SESSIONS, "Invalid access code")
         return jsonify(result)
 
     config = allowed_access_codes[access_code]
@@ -71,136 +85,145 @@ def start_session():
 
     # Information returned to user
     result = {
-        'access_code': access_code,
-        'session_id': session_id,
-
-        'example_text': examples[config.example],
-        'prompt_text': prompts[config.prompt],
+        "access_code": access_code,
+        "session_id": session_id,
+        "example_text": examples[config.example],
+        "prompt_text": prompts[config.prompt],
     }
     result.update(config.convert_to_dict())
 
     # Information stored on the server
     SESSIONS[session_id] = {
-        'access_code': access_code,
-        'session_id': session_id,
-
-        'start_timestamp': time(),
-        'last_query_timestamp': time(),
-        'verification_code': verification_code,
+        "access_code": access_code,
+        "session_id": session_id,
+        "start_timestamp": time(),
+        "last_query_timestamp": time(),
+        "verification_code": verification_code,
     }
     SESSIONS[session_id].update(config.convert_to_dict())
 
-    result['status'] = SUCCESS
+    result["status"] = SUCCESS
 
     session = SESSIONS[session_id]
-    model_name = result['engine'].strip()
-    domain = result['domain'] if 'domain' in result else ''
+    model_name = result["engine"].strip()
+    domain = result["domain"] if "domain" in result else ""
 
     append_session_to_file(session, metadata_path)
-    print_verbose('New session created', session, verbose)
-    print_current_sessions(SESSIONS, f'Session {session_id} ({domain}: {model_name}) has been started successfully.')
+    print_verbose("New session created", session, verbose)
+    print_current_sessions(
+        SESSIONS,
+        f"Session {session_id} ({domain}: {model_name}) has been started successfully.",
+    )
 
     gc.collect(generation=2)
     return jsonify(result)
 
 
-@app.route('/api/end_session', methods=['POST'])
-@cross_origin(origin='*')
+@app.route("/api/end_session", methods=["POST"])
+@cross_origin(origin="*")
 def end_session():
     content = request.json
-    session_id = content['sessionId']
-    log = content['logs']
+    session_id = content["sessionId"]
+    log = content["logs"]
 
-    path = os.path.join(proj_dir, session_id) + '.jsonl'
+    path = os.path.join(proj_dir, session_id) + ".jsonl"
 
     results = {}
-    results['path'] = path
+    results["path"] = path
     try:
         save_log_to_jsonl(path, log)
-        results['status'] = SUCCESS
+        results["status"] = SUCCESS
     except Exception as e:
-        results['status'] = FAILURE
-        results['message'] = str(e)
+        results["status"] = FAILURE
+        results["message"] = str(e)
         print(e)
-    print_verbose('Save log to file', {
-        'session_id': session_id,
-        'len(log)': len(log),
-        'status': results['status'],
-    }, verbose)
+    print_verbose(
+        "Save log to file",
+        {
+            "session_id": session_id,
+            "len(log)": len(log),
+            "status": results["status"],
+        },
+        verbose,
+    )
 
     # Remove a finished session
     try:
         # NOTE: Somehow end_session is called twice;
         # Do not pop session_id from SESSIONS to prevent exception
         session = SESSIONS[session_id]
-        results['verification_code'] = session['verification_code']
-        print_current_sessions(SESSIONS, f'Session {session_id} has been saved successfully.')
+        results["verification_code"] = session["verification_code"]
+        print_current_sessions(
+            SESSIONS, f"Session {session_id} has been saved successfully."
+        )
     except Exception as e:
         print(e)
-        print('# Error at the end of end_session; ignore')
-        results['verification_code'] = 'SERVER_ERROR'
-        print_current_sessions(SESSIONS, f'Session {session_id} has not been saved.')
+        print("# Error at the end of end_session; ignore")
+        results["verification_code"] = "SERVER_ERROR"
+        print_current_sessions(SESSIONS, f"Session {session_id} has not been saved.")
 
     gc.collect(generation=2)
     return jsonify(results)
 
 
-@app.route('/api/query', methods=['POST'])
-@cross_origin(origin='*')
+@app.route("/api/query", methods=["POST"])
+@cross_origin(origin="*")
 def query():
     content = request.json
-    session_id = content['session_id']
-    domain = content['domain']
-    prev_suggestions = content['suggestions']
+    session_id = content["session_id"]
+    domain = content["domain"]
+    prev_suggestions = content["suggestions"]
 
     results = {}
     try:
-        SESSIONS[session_id]['last_query_timestamp'] = time()
+        SESSIONS[session_id]["last_query_timestamp"] = time()
     except Exception as e:
-        print(f'# Ignoring an error in query: {e}')
+        print(f"# Ignoring an error in query: {e}")
 
     # Check if session ID is valid
     if session_id not in SESSIONS:
-        results['status'] = FAILURE
-        results['message'] = f'Your session has not been established due to invalid access code. Please check your access code in URL.'
+        results["status"] = FAILURE
+        results["message"] = (
+            f"Your session has not been established due to invalid access code. Please check your access code in URL."
+        )
         return jsonify(results)
 
-    example = content['example']
+    example = content["example"]
     example_text = examples[example]
 
     # Overwrite example text if it is manually provided
-    if 'example_text' in content:
-        example_text = content['example_text']
+    if "example_text" in content:
+        example_text = content["example_text"]
 
     # Get configurations
-    n = int(content['n'])
-    max_tokens = int(content['max_tokens'])
-    temperature = float(content['temperature'])
-    top_p = float(content['top_p'])
-    presence_penalty = float(content['presence_penalty'])
-    frequency_penalty = float(content['frequency_penalty'])
+    n = int(content["n"])
+    max_tokens = int(content["max_tokens"])
+    temperature = float(content["temperature"])
+    top_p = float(content["top_p"])
+    presence_penalty = float(content["presence_penalty"])
+    frequency_penalty = float(content["frequency_penalty"])
 
-    engine = content['engine'] if 'engine' in content else None
+    engine = content["engine"] if "engine" in content else None
     context_window_size = get_context_window_size(engine)
 
-    stop = [sequence for sequence in content['stop'] if len(sequence) > 0]
-    if 'DO_NOT_STOP' in stop:
+    stop = [sequence for sequence in content["stop"] if len(sequence) > 0]
+    if "DO_NOT_STOP" in stop:
         stop = []
 
     # Remove special characters
-    stop_sequence = [sequence for sequence in stop if sequence not in {'.'}]
-    stop_rules = [sequence for sequence in stop if sequence in {'.'}]
+    stop_sequence = [sequence for sequence in stop if sequence not in {"."}]
+    stop_rules = [sequence for sequence in stop if sequence in {"."}]
     if not stop_sequence:
         stop_sequence = None
 
     # Parse doc
-    doc = content['doc']
+    doc = content["doc"]
     results = parse_prompt(example_text + doc, max_tokens, context_window_size)
-    prompt = results['effective_prompt']
+    prompt = results["effective_prompt"]
 
     # Query GPT-3
     try:
-        if "---" in prompt: # If the demarcation is there, then suggest an insertion
+        if "---" in prompt:  # If the demarcation is there, then suggest an insertion
             prompt, suffix = prompt.split("---")
             response = openai.Completion.create(
                 engine=engine,
@@ -229,29 +252,29 @@ def query():
                 stop=stop_sequence,
             )
         suggestions = []
-        for choice in response['choices']:
+        for choice in response["choices"]:
             suggestion = parse_suggestion(
-                choice.text,
-                results['after_prompt'],
-                stop_rules
+                choice.text, results["after_prompt"], stop_rules
             )
             probability = parse_probability(choice.logprobs)
             suggestions.append((suggestion, probability, engine))
     except Exception as e:
-        results['status'] = FAILURE
-        results['message'] = str(e)
+        results["status"] = FAILURE
+        results["message"] = str(e)
         print(e)
         return jsonify(results)
 
     # Always return original model outputs
     original_suggestions = []
     for index, (suggestion, probability, source) in enumerate(suggestions):
-        original_suggestions.append({
-            'original': suggestion,
-            'trimmed': suggestion.strip(),
-            'probability': probability,
-            'source': source,
-        })
+        original_suggestions.append(
+            {
+                "original": suggestion,
+                "trimmed": suggestion.strip(),
+                "probability": probability,
+                "source": source,
+            }
+        )
 
     # Filter out model outputs for safety
     filtered_suggestions, counts = filter_suggestions(
@@ -264,39 +287,41 @@ def query():
 
     suggestions_with_probabilities = []
     for index, (suggestion, probability, source) in enumerate(filtered_suggestions):
-        suggestions_with_probabilities.append({
-            'index': index,
-            'original': suggestion,
-            'trimmed': suggestion.strip(),
-            'probability': probability,
-            'source': source,
-        })
+        suggestions_with_probabilities.append(
+            {
+                "index": index,
+                "original": suggestion,
+                "trimmed": suggestion.strip(),
+                "probability": probability,
+                "source": source,
+            }
+        )
 
-    results['status'] = SUCCESS
-    results['original_suggestions'] = original_suggestions
-    results['suggestions_with_probabilities'] = suggestions_with_probabilities
-    results['ctrl'] = {
-        'n': n,
-        'max_tokens': max_tokens,
-        'temperature': temperature,
-        'top_p': top_p,
-        'presence_penalty': presence_penalty,
-        'frequency_penalty': frequency_penalty,
-        'stop': stop,
+    results["status"] = SUCCESS
+    results["original_suggestions"] = original_suggestions
+    results["suggestions_with_probabilities"] = suggestions_with_probabilities
+    results["ctrl"] = {
+        "n": n,
+        "max_tokens": max_tokens,
+        "temperature": temperature,
+        "top_p": top_p,
+        "presence_penalty": presence_penalty,
+        "frequency_penalty": frequency_penalty,
+        "stop": stop,
     }
-    results['counts'] = counts
-    print_verbose('Result', results, verbose)
+    results["counts"] = counts
+    print_verbose("Result", results, verbose)
     return jsonify(results)
 
 
-@app.route('/api/get_log', methods=['POST'])
-@cross_origin(origin='*')
+@app.route("/api/get_log", methods=["POST"])
+@cross_origin(origin="*")
 def get_log():
     results = dict()
 
     content = request.json
-    session_id = content['sessionId']
-    domain = content['domain'] if 'domain' in content else None
+    session_id = content["sessionId"]
+    domain = content["domain"] if "domain" in content else None
 
     # Retrieve the latest list of logs
     log_paths = retrieve_log_paths(args.replay_dir)
@@ -304,53 +329,49 @@ def get_log():
     try:
         log_path = log_paths[session_id]
         log = read_log(log_path)
-        results['status'] = SUCCESS
-        results['logs'] = log
+        results["status"] = SUCCESS
+        results["logs"] = log
     except Exception as e:
-        results['status'] = FAILURE
-        results['message'] = str(e)
+        results["status"] = FAILURE
+        results["message"] = str(e)
 
-    if results['status'] == FAILURE:
+    if results["status"] == FAILURE:
         return results
 
     # Populate metadata
     try:
         stats = compute_stats(log)
         last_text = get_last_text_from_log(log)
-        config = get_config_for_log(
-            session_id,
-            metadata,
-            metadata_path
-        )
+        config = get_config_for_log(session_id, metadata, metadata_path)
     except Exception as e:
-        print(f'# Failed to retrieve metadata for the log: {e}')
+        print(f"# Failed to retrieve metadata for the log: {e}")
         stats = None
         last_text = None
         config = None
-    results['stats'] = stats
-    results['config'] = config
-    results['last_text'] = last_text
+    results["stats"] = stats
+    results["config"] = config
+    results["last_text"] = last_text
 
-    print_verbose('Get log', results, verbose)
+    print_verbose("Get log", results, verbose)
     return results
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     parser = ArgumentParser()
 
     # Required arguments
-    parser.add_argument('--config_dir', type=str, required=True)
-    parser.add_argument('--log_dir', type=str, required=True)
-    parser.add_argument('--port', type=int, required=True)
-    parser.add_argument('--proj_name', type=str, required=True)
+    parser.add_argument("--config_dir", type=str, required=True)
+    parser.add_argument("--log_dir", type=str, required=True)
+    parser.add_argument("--port", type=int, required=True)
+    parser.add_argument("--proj_name", type=str, required=True)
 
     # Optional arguments
-    parser.add_argument('--replay_dir', type=str, default='../logs')
+    parser.add_argument("--replay_dir", type=str, default="../logs")
 
-    parser.add_argument('--debug', action='store_true')
-    parser.add_argument('--verbose', action='store_true')
+    parser.add_argument("--debug", action="store_true")
+    parser.add_argument("--verbose", action="store_true")
 
-    parser.add_argument('--use_blocklist', action='store_true')
+    parser.add_argument("--use_blocklist", action="store_true")
 
     global args
     args = parser.parse_args()
@@ -366,15 +387,15 @@ if __name__ == '__main__':
 
     # Create a text file for storing metadata
     global metadata_path
-    metadata_path = os.path.join(args.log_dir, 'metadata.txt')
+    metadata_path = os.path.join(args.log_dir, "metadata.txt")
     if not os.path.exists(metadata_path):
-        with open(metadata_path, 'w') as f:
-            f.write('')
+        with open(metadata_path, "w") as f:
+            f.write("")
 
     # Read and set API keys
     global api_keys
     api_keys = read_api_keys(config_dir)
-    openai.api_key = api_keys[('openai', 'default')]
+    openai.api_key = api_keys[("openai", "default")]
 
     # Read examples (hidden prompts), prompts, and a blocklist
     global examples, prompts, blocklist
@@ -383,7 +404,7 @@ if __name__ == '__main__':
     blocklist = []
     if args.use_blocklist:
         blocklist = read_blocklist(config_dir)
-        print(f' # Using a blocklist: {len(blocklist)}')
+        print(f" # Using a blocklist: {len(blocklist)}")
 
     # Read access codes
     global allowed_access_codes
@@ -391,16 +412,13 @@ if __name__ == '__main__':
 
     global session_id_history
     metadata = dict()
-    metadata = update_metadata(
-        metadata,
-        metadata_path
-    )
+    metadata = update_metadata(metadata, metadata_path)
 
     global verbose
     verbose = args.verbose
 
     app.run(
-        host='0.0.0.0',
+        host="0.0.0.0",
         port=args.port,
         debug=args.debug,
     )

@@ -12,30 +12,28 @@ def parse_prompt(text, max_tokens, context_window_size):
     # Check the number of tokens in a prompt
     max_prompt_len = (context_window_size - max_tokens) * 4
 
-    before_prompt = ''
+    before_prompt = ""
     prompt = text
     if len(text) > max_prompt_len:
         before_prompt = text[:-max_prompt_len]
         prompt = text[-max_prompt_len:]
 
-    lines = prompt.split('\n')
+    lines = prompt.split("\n")
     removed = lines[-1].rstrip()
 
-    effective_prompt = '\n'.join(lines[:-1] + [removed])
-    after_prompt = lines[-1][len(removed):]  # Contains removed whitespace at the end
+    effective_prompt = "\n".join(lines[:-1] + [removed])
+    after_prompt = lines[-1][len(removed) :]  # Contains removed whitespace at the end
 
     results = {
-        'text_len': len(text),
-        'before_prompt': before_prompt,
-        'effective_prompt': effective_prompt,
-        'after_prompt': after_prompt,
+        "text_len": len(text),
+        "before_prompt": before_prompt,
+        "effective_prompt": effective_prompt,
+        "after_prompt": after_prompt,
     }
     return results
 
 
-def parse_probability(
-    logprobs
-):
+def parse_probability(logprobs):
     """
     Parameters:
         logprobs (dict): Log probabilities from the OpenAI API.
@@ -83,29 +81,25 @@ def parse_probability(
         "text": "\n\n"
         }
     """
-    logprob = sum(logprobs['token_logprobs'])
-    prob = np.e ** logprob
+    logprob = sum(logprobs["token_logprobs"])
+    prob = np.e**logprob
     return prob * 100
 
 
-def parse_suggestion(
-    suggestion,
-    after_prompt,
-    stop_rules
-):
+def parse_suggestion(suggestion, after_prompt, stop_rules):
     processed_suggestion = suggestion
 
     # Remove (duplicate) whitespace
     if suggestion.startswith(after_prompt):
-        processed_suggestion = suggestion[len(after_prompt):]
+        processed_suggestion = suggestion[len(after_prompt) :]
 
     # Return the first sentence and discard the rest
-    if '.' in stop_rules:
+    if "." in stop_rules:
         sentences = sent_tokenize(processed_suggestion)
         if not sentences:
-            return ''
+            return ""
 
-        first_sentence = sentences[0].strip().split('\n')[0]
+        first_sentence = sentences[0].strip().split("\n")[0]
 
         # Retain the preceeding whitespace
         start = processed_suggestion.index(first_sentence)
@@ -128,13 +122,13 @@ def filter_suggestions(
         blocklist: a set of strings
     """
     filtered_suggestions = []
-    duplicates = set([prev_sugg['original'] for prev_sugg in prev_suggestions])
+    duplicates = set([prev_sugg["original"] for prev_sugg in prev_suggestions])
 
     empty_cnt = 0
     duplicate_cnt = 0
     bad_cnt = 0
 
-    for (suggestion, probability, source) in suggestions:
+    for suggestion, probability, source in suggestions:
         # Filter out empty strings
         if remove_empty_strings:
             if not suggestion:  # Make sure it's not due to \n in stop_sequence
@@ -152,15 +146,15 @@ def filter_suggestions(
             words = word_tokenize(suggestion.lower())
             if any([word in words for word in blocklist]):
                 bad_cnt += 1
-                print(f'bad_cnt: {suggestion}')
+                print(f"bad_cnt: {suggestion}")
                 continue
 
         duplicates.add(suggestion)
         filtered_suggestions.append((suggestion, probability, source))
 
     counts = {
-        'empty_cnt': empty_cnt,
-        'duplicate_cnt': duplicate_cnt,
-        'bad_cnt': bad_cnt,
+        "empty_cnt": empty_cnt,
+        "duplicate_cnt": duplicate_cnt,
+        "bad_cnt": bad_cnt,
     }
     return filtered_suggestions, counts
