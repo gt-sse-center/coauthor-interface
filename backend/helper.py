@@ -7,7 +7,6 @@ import json
 import uuid
 import collections
 from pathlib import Path
-from datetime import date, datetime
 from time import time, ctime
 
 from reader import update_metadata

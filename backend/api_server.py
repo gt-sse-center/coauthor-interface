@@ -4,11 +4,9 @@ Starts a Flask server that handles API requests from the frontend.
 
 import os
 import gc
-import shutil
 import random
 import openai
 import warnings
-import numpy as np
 from time import time
 from argparse import ArgumentParser
 
@@ -171,7 +169,10 @@ def end_session():
 def query():
     content = request.json
     session_id = content["session_id"]
-    domain = content["domain"]
+
+    # NOTE: commenting out for ruff
+    # domain = content["domain"]
+
     prev_suggestions = content["suggestions"]
 
     results = {}
@@ -184,7 +185,7 @@ def query():
     if session_id not in SESSIONS:
         results["status"] = FAILURE
         results["message"] = (
-            f"Your session has not been established due to invalid access code. Please check your access code in URL."
+            "Your session has not been established due to invalid access code. Please check your access code in URL."
         )
         return jsonify(results)
 
@@ -321,7 +322,9 @@ def get_log():
 
     content = request.json
     session_id = content["sessionId"]
-    domain = content["domain"] if "domain" in content else None
+
+    # NOTE: commenting out for ruff
+    # domain = content["domain"] if "domain" in content else None
 
     # Retrieve the latest list of logs
     log_paths = retrieve_log_paths(args.replay_dir)

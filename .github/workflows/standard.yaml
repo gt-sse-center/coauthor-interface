@@ -31,9 +31,7 @@ jobs:
       SIMULATE_TERMINAL_CAPABILITIES_SUPPORTS_COLORS: "1"
       PYTHONIOENCODING: "UTF-8"
 
-    permissions: {}
-
-    spermissions:
+    permissions:
       contents: read
 
     steps:
@@ -50,12 +48,4 @@ jobs:
 
       - name: Validate Tests
         run: uv run pytest
-        env:
-          COVERAGE_FILE: .coverage.${{ matrix.os }}.${{ matrix.python_version }}
-
-      - name: Upload Coverage Data
-        uses: actions/upload-artifact@v4
-        with:
-          name: .coverage.${{ matrix.os }}.${{ matrix.python_version }}
-          path: .coverage.${{ matrix.os }}.${{ matrix.python_version }}
-          include-hidden-files: true
+        

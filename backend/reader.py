@@ -1,7 +1,6 @@
 import os
 import csv
 import json
-import collections
 
 from access_code import AccessCodeConfig
 

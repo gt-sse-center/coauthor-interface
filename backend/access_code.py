@@ -2,8 +2,6 @@
 Reads and stores configurations for an access code.
 """
 
-import copy
-import random
 
 
 class AccessCodeConfig:
