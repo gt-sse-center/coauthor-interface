@@ -3,7 +3,6 @@ Reads and stores configurations for an access code.
 """
 
 
-
 class AccessCodeConfig:
     def __init__(self, row):
         # Default values
