@@ -2,3 +2,4 @@ api_keys.csv
 logs/*
 venv/*
 *.pyc
+/.idea

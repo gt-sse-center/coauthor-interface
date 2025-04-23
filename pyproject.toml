@@ -42,3 +42,7 @@ dependencies = [
     "yarl==1.9.1",
     "zipp==3.15.0",
 ]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = "."
