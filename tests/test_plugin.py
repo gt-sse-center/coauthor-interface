@@ -1,7 +1,7 @@
 from src.coauthor_interface.backend.PluginInterface import (
     Plugin,
     Intervention,
-    InterventionType,
+    InterventionEnum,
 )
 
 
@@ -14,7 +14,7 @@ class MockPlugin(Plugin):
         return logs == ["This is true"]
 
     def intervention_action(self) -> Intervention:
-        return Intervention(InterventionType.toast, "This is a toast message")
+        return Intervention(InterventionEnum.toast, "This is a toast message")
 
 
 def test_mock_plugin_name():
@@ -32,8 +32,5 @@ def test_intervention_action():
     plugin = MockPlugin()
     intervention = plugin.intervention_action()
     assert isinstance(intervention, Intervention)
-    assert intervention.intervention_dict["intervention_type"] == InterventionType.toast
-    assert (
-        intervention.intervention_dict["intervention_message"]
-        == "This is a toast message"
-    )
+    assert intervention.intervention_type == InterventionEnum.toast
+    assert intervention.intervention_message == "This is a toast message"
