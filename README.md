@@ -63,11 +63,12 @@ For `host` and `domain`, you can simply use `openai` and `default`. If you want 
 
 **3. Run the server on your local machine or on a server**
 
-Run the server in `./backend` with basic parameters as follows:
+Run the server located in `./src/coauthor_interface/backend` with basic parameters as follows:
 ```
-python3 api_server.py \
-    --config_dir '../config' \
-    --log_dir ../logs \
+# run from root directory
+python3 -m src.coauthor_interface.backend.api_server \
+    --config_dir 'config' \
+    --log_dir logs \
     --port 5555 \
     --proj_name 'pilot' \
     --debug

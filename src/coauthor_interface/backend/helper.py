@@ -8,8 +8,7 @@ import uuid
 import collections
 from pathlib import Path
 from time import time, ctime
-
-from reader import update_metadata
+from src.coauthor_interface.backend.reader import update_metadata
 
 
 def get_uuid():
