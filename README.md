@@ -46,7 +46,7 @@ git clone https://github.com/minalee-research/coauthor-interface
 Inside the `coauthor-interface` directory, run the following to install the required packages:
 
 ```
-pip install -r requirements.txt
+uv sync
 ```
 
 **2. Add your API key(s) to use OpenAI models**
@@ -65,13 +65,13 @@ For `host` and `domain`, you can simply use `openai` and `default`. If you want 
 
 Run the server located in `./src/coauthor_interface/backend` with basic parameters as follows:
 ```
-# run from root directory
-python3 -m src.coauthor_interface.backend.api_server \
-    --config_dir 'config' \
-    --log_dir logs \
-    --port 5555 \
-    --proj_name 'pilot' \
-    --debug
+cd src/
+uv run python -m coauthor_interface.backend.api_server \
+  --config_dir ../config \
+  --log_dir logs \
+  --port 5555 \
+  --proj_name pilot \
+  --debug
 ```
 
 The backend initializes sessions using access codes that are read from `./config/access_codes.csv`. When you enter the frontend, the access code provided needs to match one of the created codes here.  

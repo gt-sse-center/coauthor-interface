@@ -1,7 +1,12 @@
+import os
+import sys
+# Allow imports from the src/ directory so coauthor_interface is visible
+# sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'src')))
+
 import importlib
 import pytest
-from src.coauthor_interface.backend.api_server import app
-import src.coauthor_interface.backend.api_server as srv
+from coauthor_interface.backend.api_server import app, DEV_MODE, SESSIONS
+import coauthor_interface.backend.api_server as srv
 
 @pytest.fixture
 def client():

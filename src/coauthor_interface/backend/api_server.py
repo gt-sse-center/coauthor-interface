@@ -10,7 +10,7 @@ import warnings
 from time import time
 from argparse import ArgumentParser
 
-from src.coauthor_interface.backend.reader import (
+from coauthor_interface.backend.reader import (
     read_api_keys,
     read_log,
     read_examples,
@@ -19,7 +19,7 @@ from src.coauthor_interface.backend.reader import (
     read_access_codes,
     update_metadata,
 )
-from src.coauthor_interface.backend.helper import (
+from coauthor_interface.backend.helper import (
     print_verbose,
     print_current_sessions,
     get_uuid,
@@ -31,7 +31,7 @@ from src.coauthor_interface.backend.helper import (
     get_last_text_from_log,
     get_config_for_log,
 )
-from src.coauthor_interface.backend.parsing import (
+from coauthor_interface.backend.parsing import (
     parse_prompt,
     parse_suggestion,
     parse_probability,
