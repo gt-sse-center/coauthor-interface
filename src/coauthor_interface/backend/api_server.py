@@ -10,7 +10,7 @@ import warnings
 from time import time
 from argparse import ArgumentParser
 
-from reader import (
+from src.coauthor_interface.backend.reader import (
     read_api_keys,
     read_log,
     read_examples,
@@ -19,7 +19,7 @@ from reader import (
     read_access_codes,
     update_metadata,
 )
-from helper import (
+from src.coauthor_interface.backend.helper import (
     print_verbose,
     print_current_sessions,
     get_uuid,
@@ -31,7 +31,7 @@ from helper import (
     get_last_text_from_log,
     get_config_for_log,
 )
-from parsing import (
+from src.coauthor_interface.backend.parsing import (
     parse_prompt,
     parse_suggestion,
     parse_probability,
@@ -42,6 +42,8 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS, cross_origin
 
 warnings.filterwarnings("ignore", category=FutureWarning)  # noqa
+
+DEV_MODE = os.getenv("DEV_MODE", "false").lower() == "true"
 
 SESSIONS = dict()
 app = Flask(__name__)
@@ -224,41 +226,45 @@ def query():
 
     # Query GPT-3
     try:
-        if "---" in prompt:  # If the demarcation is there, then suggest an insertion
-            prompt, suffix = prompt.split("---")
-            response = openai.Completion.create(
-                engine=engine,
-                prompt=prompt,
-                suffix=suffix,
-                n=n,
-                max_tokens=max_tokens,
-                temperature=temperature,
-                top_p=top_p,
-                presence_penalty=presence_penalty,
-                frequency_penalty=frequency_penalty,
-                logprobs=10,
-                stop=stop_sequence,
-            )
+        if DEV_MODE:
+            # DEV_MODE: return no suggestions
+            suggestions = []
         else:
-            response = openai.Completion.create(
-                engine=engine,
-                prompt=prompt,
-                n=n,
-                max_tokens=max_tokens,
-                temperature=temperature,
-                top_p=top_p,
-                presence_penalty=presence_penalty,
-                frequency_penalty=frequency_penalty,
-                logprobs=10,
-                stop=stop_sequence,
-            )
-        suggestions = []
-        for choice in response["choices"]:
-            suggestion = parse_suggestion(
-                choice.text, results["after_prompt"], stop_rules
-            )
-            probability = parse_probability(choice.logprobs)
-            suggestions.append((suggestion, probability, engine))
+            if "---" in prompt:  # If the demarcation is there, then suggest an insertion
+                prompt, suffix = prompt.split("---")
+                response = openai.Completion.create(
+                    engine=engine,
+                    prompt=prompt,
+                    suffix=suffix,
+                    n=n,
+                    max_tokens=max_tokens,
+                    temperature=temperature,
+                    top_p=top_p,
+                    presence_penalty=presence_penalty,
+                    frequency_penalty=frequency_penalty,
+                    logprobs=10,
+                    stop=stop_sequence,
+                )
+            else:
+                response = openai.Completion.create(
+                    engine=engine,
+                    prompt=prompt,
+                    n=n,
+                    max_tokens=max_tokens,
+                    temperature=temperature,
+                    top_p=top_p,
+                    presence_penalty=presence_penalty,
+                    frequency_penalty=frequency_penalty,
+                    logprobs=10,
+                    stop=stop_sequence,
+                )
+            suggestions = []
+            for choice in response["choices"]:
+                suggestion = parse_suggestion(
+                    choice.text, results["after_prompt"], stop_rules
+                )
+                probability = parse_probability(choice.logprobs)
+                suggestions.append((suggestion, probability, engine))
     except Exception as e:
         results["status"] = FAILURE
         results["message"] = str(e)
@@ -398,7 +404,8 @@ if __name__ == "__main__":
     # Read and set API keys
     global api_keys
     api_keys = read_api_keys(config_dir)
-    openai.api_key = api_keys[("openai", "default")]
+    if not DEV_MODE:
+        openai.api_key = api_keys[("openai", "default")]
 
     # Read examples (hidden prompts), prompts, and a blocklist
     global examples, prompts, blocklist
