@@ -1,7 +1,7 @@
 import importlib
 import pytest
-from src.coauthor_interface.backend.api_server import app
-import src.coauthor_interface.backend.api_server as srv
+from coauthor_interface.backend.api_server import app
+import coauthor_interface.backend.api_server as srv
 
 @pytest.fixture
 def client():

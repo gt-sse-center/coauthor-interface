@@ -1,7 +1,7 @@
 import os
 import csv
 import json
-from src.coauthor_interface.backend.access_code import AccessCodeConfig
+from coauthor_interface.backend.access_code import AccessCodeConfig
 
 
 def read_api_keys(config_dir):
