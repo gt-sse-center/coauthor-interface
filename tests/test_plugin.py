@@ -1,4 +1,4 @@
-from src.coauthor_interface.backend.PluginInterface import (
+from coauthor_interface.backend.PluginInterface import (
     Plugin,
     Intervention,
     InterventionEnum,
