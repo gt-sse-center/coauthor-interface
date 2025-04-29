@@ -230,7 +230,9 @@ def query():
             # DEV_MODE: return no suggestions
             suggestions = []
         else:
-            if "---" in prompt:  # If the demarcation is there, then suggest an insertion
+            if (
+                "---" in prompt
+            ):  # If the demarcation is there, then suggest an insertion
                 prompt, suffix = prompt.split("---")
                 response = openai.Completion.create(
                     engine=engine,
