@@ -159,3 +159,69 @@ def test_end_session_success(
     assert data["status"]
     assert "path" in data
     assert data["verification_code"] == "abc123"
+
+
+@patch("coauthor_interface.backend.api_server.save_log_to_jsonl")
+@patch("coauthor_interface.backend.api_server.print_verbose")
+@patch("coauthor_interface.backend.api_server.print_current_sessions")
+@patch("coauthor_interface.backend.api_server.gc.collect")
+def test_end_session_save_log_failure(
+    mock_gc,
+    mock_print_current_sessions,
+    mock_print_verbose,
+    mock_save_log_to_jsonl,
+    client,
+):
+    # Arrange mock data
+    session_id = "def456"
+    fake_log = [{"event": "click", "value": "submit"}]
+
+    # Clear (since SESSIONS is a global variable) and populate SESSIONS with a fake session
+    srv.SESSIONS.clear()
+    srv.SESSIONS[session_id] = {
+        "verification_code": "def456",
+    }
+
+    mock_save_log_to_jsonl.side_effect = Exception("Invalid filepath")
+
+    payload = {
+        "sessionId": session_id,
+        "logs": fake_log,
+    }
+
+    response = client.post("/api/end_session", json=payload)
+
+    assert response.status_code == 200
+    data = response.get_json()
+    assert not data["status"]
+    assert "Invalid filepath" in data["message"]
+    assert data["verification_code"] == "def456"
+
+
+@patch("coauthor_interface.backend.api_server.save_log_to_jsonl")
+@patch("coauthor_interface.backend.api_server.print_verbose")
+@patch("coauthor_interface.backend.api_server.print_current_sessions")
+@patch("coauthor_interface.backend.api_server.gc.collect")
+def test_end_session_missing_session(
+    mock_gc,
+    mock_print_current_sessions,
+    mock_print_verbose,
+    mock_save_log_to_jsonl,
+    client,
+):
+    # Arrange mock data
+    session_id = "nonexistent"
+    fake_log = [{"event": "click", "value": "cancel"}]
+    srv.proj_dir = "some_fake_proj_dir"
+
+    payload = {
+        "sessionId": session_id,
+        "logs": fake_log,
+    }
+
+    response = client.post("/api/end_session", json=payload)
+
+    assert response.status_code == 200
+    data = response.get_json()
+    assert data["status"]  # Still true if log save works
+    assert data["verification_code"] == "SERVER_ERROR"
