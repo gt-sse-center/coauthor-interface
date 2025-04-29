@@ -1,6 +1,6 @@
 import importlib
 import pytest
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch, MagicMock, call
 from coauthor_interface.backend.api_server import app
 import coauthor_interface.backend.api_server as srv
 
@@ -225,3 +225,82 @@ def test_end_session_missing_session(
     data = response.get_json()
     assert data["status"]  # Still true if log save works
     assert data["verification_code"] == "SERVER_ERROR"
+
+
+@patch(
+    "coauthor_interface.backend.api_server.append_session_to_file"
+)  # Patch to prevent file writes
+@patch("coauthor_interface.backend.api_server.read_access_codes")
+@patch("coauthor_interface.backend.api_server.read_prompts")
+@patch("coauthor_interface.backend.api_server.read_examples")
+@patch("coauthor_interface.backend.api_server.get_uuid")
+@patch("coauthor_interface.backend.api_server.save_log_to_jsonl")
+@patch("coauthor_interface.backend.api_server.print_current_sessions")
+@patch("coauthor_interface.backend.api_server.print_verbose")
+@patch("coauthor_interface.backend.api_server.gc.collect")
+def test_multiple_sessions_do_not_mix_logs(
+    mock_gc,
+    mock_print_verbose,
+    mock_print_current_sessions,
+    mock_save_log_to_jsonl,
+    mock_get_uuid,
+    mock_read_examples,
+    mock_read_prompts,
+    mock_read_access_codes,
+    mock_append_session_to_file,
+    client,
+):
+    # Set up mocks for start_session
+    mock_get_uuid.side_effect = ["sessionA", "sessionB"]
+    mock_read_examples.return_value = {"example1": "Example A", "example2": "Example B"}
+    mock_read_prompts.return_value = {"prompt1": "Prompt A", "prompt2": "Prompt B"}
+
+    class DummyConfig:
+        def __init__(self, prompt, example):
+            self.prompt = prompt
+            self.example = example
+            self.engine = "gpt-test"
+            self.domain = "test-domain"
+
+        def convert_to_dict(self):
+            return {"engine": self.engine, "domain": self.domain}
+
+    mock_read_access_codes.return_value = {
+        "codeA": DummyConfig("prompt1", "example1"),
+        "codeB": DummyConfig("prompt2", "example2"),
+    }
+
+    # ----- Start two sessions -----
+    response1 = client.post("/api/start_session", json={"accessCode": "codeA"})
+    response2 = client.post("/api/start_session", json={"accessCode": "codeB"})
+
+    session_id_1 = response1.get_json()["session_id"]
+    session_id_2 = response2.get_json()["session_id"]
+
+    # End both sessions with different logs
+    logs_1 = [{"event": "keypress", "value": "A"}]
+    logs_2 = [{"event": "click", "value": "B"}]
+
+    client.post("/api/end_session", json={"sessionId": session_id_1, "logs": logs_1})
+    client.post("/api/end_session", json={"sessionId": session_id_2, "logs": logs_2})
+
+    # Check that logs were written to different files with correct content
+    srv.proj_dir = "some_fake_proj_dir"
+    expected_path_1 = f"{srv.proj_dir}/{session_id_1}.jsonl"
+    expected_path_2 = f"{srv.proj_dir}/{session_id_2}.jsonl"
+
+    # Check that save_log_to_jsonl called twice - once per session
+    assert mock_save_log_to_jsonl.call_count == 2
+    mock_save_log_to_jsonl.assert_has_calls(
+        [
+            call(expected_path_1, logs_1),
+            call(expected_path_2, logs_2),
+        ],
+        any_order=True,
+    )
+
+    # Ensure logs weren't crossed
+    actual_calls = mock_save_log_to_jsonl.call_args_list
+
+    # checks that log content passed to save_log_to_jsonl for each session is different
+    assert actual_calls[0][0][1] != actual_calls[1][0][1]
