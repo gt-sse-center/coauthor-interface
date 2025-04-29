@@ -98,3 +98,27 @@ def test_start_session_success(
     assert "session_id" in data.keys()
     assert "example_text" in data.keys()
     assert "prompt_text" in data.keys()
+
+
+@patch("coauthor_interface.backend.api_server.read_access_codes")
+@patch("coauthor_interface.backend.api_server.read_prompts")
+@patch("coauthor_interface.backend.api_server.read_examples")
+@patch("coauthor_interface.backend.api_server.print_current_sessions")
+def test_start_session_no_access_code_provided(
+    mock_print_current_sessions,
+    mock_read_examples,
+    mock_read_prompts,
+    mock_read_access_codes,
+    client,
+):
+    # Arrange: mock data
+    mock_read_access_codes.return_value = {"valid_access_code": MagicMock()}
+
+    payload = {"accessCode": ""}  # Simulate missing or empty access code
+
+    response = client.post("/api/start_session", json=payload)
+
+    assert response.status_code == 200
+    data = response.get_json()
+    assert not data["status"]
+    assert "Invalid access code: (not provided)" in data["message"]
