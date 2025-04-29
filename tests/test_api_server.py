@@ -67,6 +67,8 @@ def test_start_session_success(
     mock_read_access_codes,
     client,
 ):
+    """Test that the start_session route returns the appropriate response"""
+
     # Arrange: Mock data
     mock_read_examples.return_value = {"example_1": "This is an example text."}
     mock_read_prompts.return_value = {"prompt_1": "This is a prompt text."}
@@ -82,13 +84,12 @@ def test_start_session_success(
 
     payload = {"domain": "general", "accessCode": "valid_access_code"}
 
-    # Act: Call the route
+    # get response
     response = client.post("/api/start_session", json=payload)
 
-    # Assert
     assert response.status_code == 200
     data = response.get_json()
-    assert data["status"] is True
+    assert data["status"]
     assert data["access_code"] == "valid_access_code"
     assert data["example_text"] == "This is an example text."
     assert data["prompt_text"] == "This is a prompt text."
