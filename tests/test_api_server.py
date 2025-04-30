@@ -304,3 +304,153 @@ def test_multiple_sessions_do_not_mix_logs(
 
     # checks that log content passed to save_log_to_jsonl for each session is different
     assert actual_calls[0][0][1] != actual_calls[1][0][1]
+
+def test_query_invalid_session(client):
+    """POST /api/query with an unknown session_id returns failure."""
+    payload = {
+        "session_id": "no_such_session",
+        "suggestions": [],
+        "example": 0,
+        "doc": "",
+        "n": 1,
+        "max_tokens": 5,
+        "temperature": 0.5,
+        "top_p": 0.9,
+        "presence_penalty": 0,
+        "frequency_penalty": 0,
+        "stop": [],
+    }
+    response = client.post("/api/query", json=payload)
+    assert response.status_code == 200
+    data = response.get_json()
+    assert data["status"] is False
+    assert "not been established" in data["message"]
+
+@patch("coauthor_interface.backend.api_server.retrieve_log_paths")
+def test_get_log_invalid_session(mock_retrieve_paths, client):
+    """POST /api/get_log with unknown session_id returns failure."""
+    mock_retrieve_paths.return_value = {}
+    # Ensure args.replay_dir exists for retrieve_log_paths
+    srv.args = type("A", (), {"replay_dir": "ignored"})()
+
+    response = client.post("/api/get_log", json={"sessionId": "unknown"})
+    assert response.status_code == 200
+    data = response.get_json()
+    assert data["status"] is False
+    # KeyError message will be the missing key name (as string repr)
+    assert data["message"] == "'unknown'"
+
+
+# --- Happy path tests ---
+@patch("coauthor_interface.backend.api_server.openai.Completion.create")
+@patch("coauthor_interface.backend.api_server.parse_suggestion")
+@patch("coauthor_interface.backend.api_server.parse_probability")
+@patch("coauthor_interface.backend.api_server.filter_suggestions")
+def test_query_success(
+    mock_filter,
+    mock_prob,
+    mock_sugg,
+    mock_create,
+    client,
+):
+    """POST /api/query returns parsed and filtered suggestions on success."""
+    from types import SimpleNamespace
+    # Ensure DEV_MODE is disabled for this test
+    srv.DEV_MODE = False
+    srv.verbose = False
+    # Arrange mocks
+    session_id = "success-session"
+    srv.SESSIONS.clear()
+    srv.SESSIONS[session_id] = {"last_query_timestamp": 0}
+    srv.examples = {0: "ex"}
+    srv.blocklist = []
+
+    # Fake OpenAI response
+    fake_choice = SimpleNamespace(
+        text=" sug",
+        logprobs={"token_logprobs": [0.1], "tokens": ["sug"]},
+    )
+    mock_create.return_value = {"choices": [fake_choice]}
+    mock_sugg.return_value = " sug_mod"
+    mock_prob.return_value = 0.42
+    # filter_suggestions returns a list of tuples and counts
+    mock_filter.return_value = ([(" sug_mod", 0.42, "engine")], {})
+
+    payload = {
+        "session_id": session_id,
+        "example": 0,
+        "doc": "",
+        "suggestions": [],
+        "n": 1,
+        "max_tokens": 5,
+        "temperature": 0.5,
+        "top_p": 0.9,
+        "presence_penalty": 0,
+        "frequency_penalty": 0,
+        "stop": [],
+        "engine": "engine",
+    }
+    response = client.post("/api/query", json=payload)
+    assert response.status_code == 200
+    data = response.get_json()
+    assert data["status"] is True
+    # original_suggestions built from parse_suggestion & parse_probability
+    assert data["original_suggestions"] == [{
+        "original": " sug_mod",
+        "trimmed": "sug_mod",
+        "probability": 0.42,
+        "source": "engine",
+    }]
+    # suggestions_with_probabilities reflecting filter_suggestions
+    assert data["suggestions_with_probabilities"] == [{
+        "index": 0,
+        "original": " sug_mod",
+        "trimmed": "sug_mod",
+        "probability": 0.42,
+        "source": "engine",
+    }]
+    # Control parameters returned
+    assert data["ctrl"]["n"] == 1
+    assert data["ctrl"]["max_tokens"] == 5
+
+
+@patch("coauthor_interface.backend.api_server.retrieve_log_paths")
+@patch("coauthor_interface.backend.api_server.read_log")
+@patch("coauthor_interface.backend.api_server.compute_stats")
+@patch("coauthor_interface.backend.api_server.get_last_text_from_log")
+@patch("coauthor_interface.backend.api_server.get_config_for_log")
+def test_get_log_success(
+    mock_get_config,
+    mock_last_text,
+    mock_stats,
+    mock_read_log,
+    mock_retrieve,
+    client,
+):
+    """POST /api/get_log returns logs and metadata on success."""
+    session_id = "log-session"
+    fake_path = "/fake/log.jsonl"
+    fake_logs = [{"evt": 1}]
+    fake_stats = {"count": 1}
+    fake_last = "end"
+    fake_conf = {"k": "v"}
+
+    mock_retrieve.return_value = {session_id: fake_path}
+    mock_read_log.return_value = fake_logs
+    mock_stats.return_value = fake_stats
+    mock_last_text.return_value = fake_last
+    mock_get_config.return_value = fake_conf
+
+    # Provide args and metadata for get_log
+    srv.args = type("A", (), {"replay_dir": "ignored"})()
+    srv.metadata = {}
+    srv.metadata_path = "meta"
+
+    response = client.post("/api/get_log", json={"sessionId": session_id})
+    assert response.status_code == 200
+    data = response.get_json()
+    assert data["status"] is True
+    assert data["logs"] == fake_logs
+    assert data["stats"] == fake_stats
+    assert data["last_text"] == fake_last
+    assert data["config"] == fake_conf
