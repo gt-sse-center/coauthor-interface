@@ -50,4 +50,9 @@ build-backend = "hatchling.build"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "--verbose -vv --capture=no --cov=coauthor_interface --cov-fail-under=35.0"
+addopts = "--verbose -vv --capture=no --cov=coauthor_interface --cov-fail-under=50.0"
+
+[dependency-groups]
+dev = [
+    "pyfakefs>=5.8.0",
+]
