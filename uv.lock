@@ -217,7 +217,6 @@ dependencies = [
     { name = "openai" },
     { name = "pip" },
     { name = "pre-commit" },
-    { name = "pyfakefs" },
     { name = "pytest" },
     { name = "pytest-cov" },
     { name = "regex" },
@@ -230,6 +229,11 @@ dependencies = [
     { name = "wheel" },
     { name = "yarl" },
     { name = "zipp" },
+]
+
+[package.dev-dependencies]
+dev = [
+    { name = "pyfakefs" },
 ]
 
 [package.metadata]
@@ -259,7 +263,6 @@ requires-dist = [
     { name = "openai", specifier = "==0.27.4" },
     { name = "pip", specifier = "==21.2.4" },
     { name = "pre-commit", specifier = ">=4.2.0" },
-    { name = "pyfakefs", specifier = ">=5.8.0" },
     { name = "pytest", specifier = ">=8.3.5" },
     { name = "pytest-cov", specifier = ">=6.1.1" },
     { name = "regex", specifier = "==2023.3.23" },
@@ -273,6 +276,9 @@ requires-dist = [
     { name = "yarl", specifier = "==1.9.1" },
     { name = "zipp", specifier = "==3.15.0" },
 ]
+
+[package.metadata.requires-dev]
+dev = [{ name = "pyfakefs", specifier = ">=5.8.0" }]
 
 [[package]]
 name = "colorama"

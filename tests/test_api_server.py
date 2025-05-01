@@ -305,6 +305,7 @@ def test_multiple_sessions_do_not_mix_logs(
     # checks that log content passed to save_log_to_jsonl for each session is different
     assert actual_calls[0][0][1] != actual_calls[1][0][1]
 
+
 def test_query_invalid_session(client):
     """POST /api/query with an unknown session_id returns failure."""
     payload = {
@@ -325,6 +326,7 @@ def test_query_invalid_session(client):
     data = response.get_json()
     assert data["status"] is False
     assert "not been established" in data["message"]
+
 
 @patch("coauthor_interface.backend.api_server.retrieve_log_paths")
 def test_get_log_invalid_session(mock_retrieve_paths, client):
@@ -355,6 +357,7 @@ def test_query_success(
 ):
     """POST /api/query returns parsed and filtered suggestions on success."""
     from types import SimpleNamespace
+
     # Ensure DEV_MODE is disabled for this test
     srv.DEV_MODE = False
     srv.verbose = False
@@ -395,20 +398,24 @@ def test_query_success(
     data = response.get_json()
     assert data["status"] is True
     # original_suggestions built from parse_suggestion & parse_probability
-    assert data["original_suggestions"] == [{
-        "original": " sug_mod",
-        "trimmed": "sug_mod",
-        "probability": 0.42,
-        "source": "engine",
-    }]
+    assert data["original_suggestions"] == [
+        {
+            "original": " sug_mod",
+            "trimmed": "sug_mod",
+            "probability": 0.42,
+            "source": "engine",
+        }
+    ]
     # suggestions_with_probabilities reflecting filter_suggestions
-    assert data["suggestions_with_probabilities"] == [{
-        "index": 0,
-        "original": " sug_mod",
-        "trimmed": "sug_mod",
-        "probability": 0.42,
-        "source": "engine",
-    }]
+    assert data["suggestions_with_probabilities"] == [
+        {
+            "index": 0,
+            "original": " sug_mod",
+            "trimmed": "sug_mod",
+            "probability": 0.42,
+            "source": "engine",
+        }
+    ]
     # Control parameters returned
     assert data["ctrl"]["n"] == 1
     assert data["ctrl"]["max_tokens"] == 5
