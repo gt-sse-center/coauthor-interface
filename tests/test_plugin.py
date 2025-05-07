@@ -1,7 +1,7 @@
 from coauthor_interface.backend.PluginInterface import (
-    Plugin,
     Intervention,
     InterventionEnum,
+    Plugin,
 )
 
 

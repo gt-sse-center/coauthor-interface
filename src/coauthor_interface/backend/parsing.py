@@ -2,8 +2,8 @@
 Parse user prompts and responses from the OpenAI API.
 """
 
-from nltk.tokenize import sent_tokenize, word_tokenize
 import numpy as np
+from nltk.tokenize import sent_tokenize, word_tokenize
 
 
 def parse_prompt(text, max_tokens, context_window_size):
