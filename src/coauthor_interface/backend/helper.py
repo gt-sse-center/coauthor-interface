@@ -2,12 +2,13 @@
 Helper functions for the backend.
 """
 
-import os
-import json
-import uuid
 import collections
+import json
+import os
+import uuid
 from pathlib import Path
-from time import time, ctime
+from time import ctime, time
+
 from coauthor_interface.backend.reader import update_metadata
 
 
@@ -37,12 +38,8 @@ def print_current_sessions(sessions, message=""):
     print("=" * 40)
     for session_id, session in sessions.items():
         start_timestamp = session["start_timestamp"]
-        elapsed_from_start = (
-            current_timestamp - start_timestamp
-        )  # Elapsed time in seconds
-        elapsed_from_start = round(
-            elapsed_from_start / 60, 2
-        )  # Elapsed time in minutes
+        elapsed_from_start = current_timestamp - start_timestamp  # Elapsed time in seconds
+        elapsed_from_start = round(elapsed_from_start / 60, 2)  # Elapsed time in minutes
 
         last_query_timestamp = session["last_query_timestamp"]
         elapsed_from_last_query = current_timestamp - last_query_timestamp
@@ -51,11 +48,9 @@ def print_current_sessions(sessions, message=""):
         active = " * " if elapsed_from_last_query < 15 else ""
 
         if elapsed_from_start < 60:
-            elapsed_from_start = f"{str(elapsed_from_start)} min"
-            elapsed_from_last_query = f"{str(elapsed_from_last_query)} min"
-            print(
-                f"{session_id}\t{elapsed_from_start:20}{elapsed_from_last_query:20}{active}"
-            )
+            elapsed_from_start = f"{elapsed_from_start!s} min"
+            elapsed_from_last_query = f"{elapsed_from_last_query!s} min"
+            print(f"{session_id}\t{elapsed_from_start:20}{elapsed_from_last_query:20}{active}")
     print("")
 
 

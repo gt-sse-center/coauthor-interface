@@ -5,16 +5,16 @@ from pathlib import Path
 from unittest.mock import patch
 
 from coauthor_interface.backend.helper import (
-    print_verbose,
-    print_current_sessions,
-    retrieve_log_paths,
     append_session_to_file,
+    apply_ops,
+    compute_stats,
+    get_config_for_log,
+    get_text_and_mask,
+    print_current_sessions,
+    print_verbose,
+    retrieve_log_paths,
     save_log_to_json,
     save_log_to_jsonl,
-    compute_stats,
-    apply_ops,
-    get_text_and_mask,
-    get_config_for_log,
 )
 
 

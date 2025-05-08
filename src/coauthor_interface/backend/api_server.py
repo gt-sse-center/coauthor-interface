@@ -2,46 +2,46 @@
 Starts a Flask server that handles API requests from the frontend.
 """
 
-import os
 import gc
+import os
 import random
-import openai
 import warnings
-from time import time
 from argparse import ArgumentParser
+from time import time
 
-from coauthor_interface.backend.reader import (
-    read_api_keys,
-    read_log,
-    read_examples,
-    read_prompts,
-    read_blocklist,
-    read_access_codes,
-    update_metadata,
-)
-from coauthor_interface.backend.helper import (
-    print_verbose,
-    print_current_sessions,
-    get_uuid,
-    retrieve_log_paths,
-    append_session_to_file,
-    get_context_window_size,
-    save_log_to_jsonl,
-    compute_stats,
-    get_last_text_from_log,
-    get_config_for_log,
-)
-from coauthor_interface.backend.parsing import (
-    parse_prompt,
-    parse_suggestion,
-    parse_probability,
-    filter_suggestions,
-)
-
-from flask import Flask, request, jsonify
+import openai
+from flask import Flask, jsonify, request
 from flask_cors import CORS, cross_origin
 
-warnings.filterwarnings("ignore", category=FutureWarning)  # noqa
+from coauthor_interface.backend.helper import (
+    append_session_to_file,
+    compute_stats,
+    get_config_for_log,
+    get_context_window_size,
+    get_last_text_from_log,
+    get_uuid,
+    print_current_sessions,
+    print_verbose,
+    retrieve_log_paths,
+    save_log_to_jsonl,
+)
+from coauthor_interface.backend.parsing import (
+    filter_suggestions,
+    parse_probability,
+    parse_prompt,
+    parse_suggestion,
+)
+from coauthor_interface.backend.reader import (
+    read_access_codes,
+    read_api_keys,
+    read_blocklist,
+    read_examples,
+    read_log,
+    read_prompts,
+    update_metadata,
+)
+
+warnings.filterwarnings("ignore", category=FutureWarning)
 
 DEV_MODE = os.getenv("DEV_MODE", "false").lower() == "true"
 
@@ -71,9 +71,7 @@ def start_session():
         if not access_code:
             access_code = "(not provided)"
         result["status"] = FAILURE
-        result["message"] = (
-            f"Invalid access code: {access_code}. Please check your access code in URL."
-        )
+        result["message"] = f"Invalid access code: {access_code}. Please check your access code in URL."
         print_current_sessions(SESSIONS, "Invalid access code")
         return jsonify(result)
 
@@ -153,9 +151,7 @@ def end_session():
         # Do not pop session_id from SESSIONS to prevent exception
         session = SESSIONS[session_id]
         results["verification_code"] = session["verification_code"]
-        print_current_sessions(
-            SESSIONS, f"Session {session_id} has been saved successfully."
-        )
+        print_current_sessions(SESSIONS, f"Session {session_id} has been saved successfully.")
     except Exception as e:
         print(e)
         print("# Error at the end of end_session; ignore")
@@ -230,9 +226,7 @@ def query():
             # DEV_MODE: return no suggestions
             suggestions = []
         else:
-            if (
-                "---" in prompt
-            ):  # If the demarcation is there, then suggest an insertion
+            if "---" in prompt:  # If the demarcation is there, then suggest an insertion
                 prompt, suffix = prompt.split("---")
                 response = openai.Completion.create(
                     engine=engine,
@@ -262,9 +256,7 @@ def query():
                 )
             suggestions = []
             for choice in response["choices"]:
-                suggestion = parse_suggestion(
-                    choice.text, results["after_prompt"], stop_rules
-                )
+                suggestion = parse_suggestion(choice.text, results["after_prompt"], stop_rules)
                 probability = parse_probability(choice.logprobs)
                 suggestions.append((suggestion, probability, engine))
     except Exception as e:
@@ -367,6 +359,49 @@ def get_log():
     return results
 
 
+@app.route("/api/parse_logs", methods=["POST"])
+@cross_origin(origin="*")
+def parse_logs():
+    """New route for handling log parsing. It
+    1. Obtains raw logs from the fronted
+    2. Invokes ActionsParserAnalyzer to parse new
+    current_action_in_progress and the list of parsed actions
+    3. Updates parsed_actions global variable
+    4. Goes through the list of new actions and if switches the
+    intervention_on variable if topic shift is detected
+    """
+    # Step 1
+    content = request.json
+    session_id = content["session_id"]
+    domain = content["domain"]
+    logs = content["logs"]
+
+    try:
+        # Step 2
+        actions_analyzer = SameSentenceMergeAnalyzer(last_action=current_action_in_progress, raw_logs=logs)
+
+        # Step 3
+        current_action_in_progress = actions_analyzer.last_action
+        new_actions = actions_analyzer.actions_lst
+        for action in new_actions:
+            action["level_1_action_type"] = action["action_type"]
+
+        new_actions = actions_analyzer.actions_lst + [convert_last_action_to_complete_action(last_action)]
+        new_actions = parse_level_3_actions(
+            {"current_session": new_actions}, similarity_fcn=get_spacy_similarity
+        )["current_session"]
+        parsed_actions += new_actions[:-1]  # update the parsed actions parameter
+
+        # Check for `major_insert_mindless_echo` pattern and
+        if SESSIONS[session_id]["intervention"] == "alert_writer" and check_for_mindless_echoing(new_actions):
+            return jsonify({"status": SUCCESS, "alert_author": True})
+        else:
+            return jsonify({"status": SUCCESS, "alert_author": False})
+    except Exception as e:
+        print(f"# Parsing failed: {e}")
+        return jsonify({"status": FAILURE, "alert_author": False})
+
+
 if __name__ == "__main__":
     parser = ArgumentParser()
 
@@ -428,6 +463,15 @@ if __name__ == "__main__":
 
     global verbose
     verbose = args.verbose
+
+    #### NEW VARIABLES ####
+    global parsed_actions
+    parsed_actions = []
+    global current_action_in_progress
+    current_action_in_progress = None
+    global intervention_on
+    intervention_on = False
+    #### NEW VARIABLES END ####
 
     app.run(
         host="0.0.0.0",

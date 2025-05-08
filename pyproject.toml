@@ -32,6 +32,7 @@ dependencies = [
     "requests>=2.32.3",
     "setuptools>=80.1.0",
     "six>=1.17.0",
+    "spacy>=3.8.5",
     "tqdm>=4.65.0",
     "urllib3>=1.26.15",
     "werkzeug>=2.2.3",
@@ -56,3 +57,50 @@ dev = [
     "pytest-cov>=6.1.1",
     "ruff>=0.11.8",
 ]
+
+[tool.ruff]
+line-length = 110
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "W", "B", "C4", "UP", "RUF"]
+ignore = [
+    "ANN002", # Missing type annotation for `*args`
+    "ANN003", # Missing type annotation for `**kwargs`
+    "BLE001", # Do not catch blind exception: `Exception`
+    "COM812", # Trailing comma missing
+    "D202", # No blank lines allowed after function docstring
+    "D205", # 1 blank line required between summary line and description
+    "E501", # Line too long
+    "I001", # Import block is un-sorted or un-formatted
+    "INP001", # Missing __init__.py file
+    "N802", # Function name `xxx` should be lowercase
+    "N999", # Invalid module name
+    "S101", # Use of assert detected
+    "UP032", # Use f-string instead of `format` call
+    "F821", # Undefined name
+    "F841", # Local variable is assigned but never used,
+    "B007", # Unnecessary pass
+    "N806", # String statement has no effect
+    "N803", # Unused import
+    "N805", # Unused variable
+    "N804", # Unused argument
+    "N807", # Unused starred expression
+    "N815", # Unused function parameter
+    "C408",
+    "C403",
+    "F823", # Undefined name
+    "RUF012", # Unused function argument,
+    "C419", # Unused import
+    "RUF005", # Unused function argument
+    
+]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+line-ending = "auto"
+skip-magic-trailing-comma = false
+
+[tool.ruff.lint.per-file-ignores]
+# Ignore `E402` (import violations) in all `__init__.py` files, and in `path/to/file.py`.
+"parser_all_levels.py" = ["F405", "F403"]
