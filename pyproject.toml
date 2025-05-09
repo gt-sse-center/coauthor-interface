@@ -19,6 +19,7 @@ dependencies = [
     "future>=1.0.0",
     "idna>=3.4",
     "importlib-metadata>=6.6.0",
+    "ipdb>=0.13.13",
     "itsdangerous>=2.1.2",
     "jinja2>=3.1.2",
     "joblib>=1.2.0",

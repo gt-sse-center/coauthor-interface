@@ -7,12 +7,19 @@ from coauthor_interface.thought_toolkit.level_2_comparisons import (
     get_action_expansion,
     get_coordination_scores,
     get_similarity_with_prev_writing_for_level_2,
+    parse_level_2_major_insert_major_semantic_diff,
+    parse_level_2_major_insert_minor_semantic_diff,
+    parse_level_2_minor_insert_major_semantic_diff,
+    parse_level_2_minor_insert_minor_semantic_diff,
+    parse_level_2_delete_major_semantic_diff,
+    parse_level_2_delete_minor_semantic_diff,
 )
 from coauthor_interface.thought_toolkit.level_3_comparisons import (
     get_idea_alignment_order_on_AI,
     get_idea_alignment_order_on_minor_insert,
     get_mindless_echo_after_AI,
     get_mindless_edit_of_AI,
+    IDEA_ALIGNMENT_MIN_WORD_COUNT,
 )
 from coauthor_interface.thought_toolkit.utils import (
     convert_string_to_timestamp,
@@ -42,6 +49,9 @@ class ActionsParserAnalyzer:
         else:
             self.actions_lst, self.last_action = self.parse_actions_from_logs(raw_logs, last_action)
             self.analyzer_on = False
+
+    def parse_actions_from_logs(self, all_logs, last_action=None):
+        raise NotImplementedError("Subclasses must implement this method")
 
     def convert_last_action_to_complete_action(self, last_action):
         """Converts the last action into a complete action for live analysis."""

@@ -24,6 +24,7 @@ from coauthor_interface.backend.helper import (
     print_verbose,
     retrieve_log_paths,
     save_log_to_jsonl,
+    check_for_mindless_echoing,
 )
 from coauthor_interface.backend.parsing import (
     filter_suggestions,
@@ -31,6 +32,15 @@ from coauthor_interface.backend.parsing import (
     parse_prompt,
     parse_suggestion,
 )
+
+from coauthor_interface.thought_toolkit.parser_all_levels import (
+    SameSentenceMergeAnalyzer,
+    parse_level_3_actions,
+)
+
+from coauthor_interface.thought_toolkit.parser_helper import convert_last_action_to_complete_action
+from coauthor_interface.thought_toolkit.utils import get_spacy_similarity
+
 from coauthor_interface.backend.reader import (
     read_access_codes,
     read_api_keys,
@@ -60,9 +70,10 @@ def start_session():
     result = {}
 
     # Read latest prompts, examples, and access codes
-    global examples, prompts
+    # pylint: disable=possibly-used-before-assignment
     examples = read_examples(config_dir)
     prompts = read_prompts(config_dir)
+    # pylint: enable=possibly-used-before-assignment
     allowed_access_codes = read_access_codes(config_dir)
 
     # Check access codes
@@ -106,8 +117,11 @@ def start_session():
     model_name = result["engine"].strip()
     domain = result["domain"] if "domain" in result else ""
 
+    # pylint: disable=possibly-used-before-assignment
     append_session_to_file(session, metadata_path)
     print_verbose("New session created", session, verbose)
+    # pylint: disable=possibly-used-before-assignment
+
     print_current_sessions(
         SESSIONS,
         f"Session {session_id} ({domain}: {model_name}) has been started successfully.",
@@ -124,7 +138,9 @@ def end_session():
     session_id = content["sessionId"]
     log = content["logs"]
 
+    # pylint: disable=possibly-used-before-assignment
     path = os.path.join(proj_dir, session_id) + ".jsonl"
+    # pylint: enable=possibly-used-before-assignment
 
     results = {}
     results["path"] = path
@@ -188,7 +204,8 @@ def query():
         return jsonify(results)
 
     example = content["example"]
-    example_text = examples[example]
+
+    example_text = examples[example]  # pylint: disable=possibly-used-before-assignment
 
     # Overwrite example text if it is manually provided
     if "example_text" in content:
@@ -278,12 +295,13 @@ def query():
         )
 
     # Filter out model outputs for safety
+    # pylint: disable=possibly-used-before-assignment
     filtered_suggestions, counts = filter_suggestions(
         suggestions,
         prev_suggestions,
         blocklist,
     )
-
+    # pylint: enable=possibly-used-before-assignment
     random.shuffle(filtered_suggestions)
 
     suggestions_with_probabilities = []
@@ -345,7 +363,7 @@ def get_log():
     try:
         stats = compute_stats(log)
         last_text = get_last_text_from_log(log)
-        config = get_config_for_log(session_id, metadata, metadata_path)
+        config = get_config_for_log(session_id, metadata, metadata_path)  # pylint: disable=possibly-used-before-assignment
     except Exception as e:
         print(f"# Failed to retrieve metadata for the log: {e}")
         stats = None

@@ -249,3 +249,35 @@ def get_context_window_size(engine):
         return 8001
     else:
         return 2049
+
+
+#### NEW HELPER FUNCTIONs #####
+def check_for_mindless_echoing(actions_lst, n_actions=7, patter_count_threshold=2):
+    """Helper function for checking the last `n_actions`
+    in the full `actions_lst` for "major_insert_mindless_echo"
+    events. If at least the `patter_count_threshold` of the
+    patter are detected, the functionr returns True."""
+    counter = 0
+    for action in actions_lst[:n_actions]:
+        if action["level_3_action_type"] == "major_insert_mindless_echo":
+            counter += 1
+        if counter >= 2:
+            return True
+    return False
+
+
+def check_for_mindless_editing(actions_lst, n_actions=5, patter_count_threshold=3):
+    """Helper function for checking the last `n_actions`
+    in the full `actions_lst` for "minor_insert_mindless_edit"
+    events. If at least the `patter_count_threshold` of the
+    patter are detected, the functionr returns True."""
+    counter = 0
+    for action in actions_lst[:n_actions]:
+        if action["level_3_action_type"] == "minor_insert_mindless_edit":
+            counter += 1
+        if counter >= 2:
+            return True
+    return False
+
+
+#### NEW HELPER FUNCTIONs END #####
