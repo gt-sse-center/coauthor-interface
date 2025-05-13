@@ -245,7 +245,7 @@ def query():
         else:
             if "---" in prompt:  # If the demarcation is there, then suggest an insertion
                 prompt, suffix = prompt.split("---")
-                response = openai.Completion.create(
+                response = openai.chat.completions.create(  # NOTE: originally was openai.Completion.create, but that was deprecated
                     engine=engine,
                     prompt=prompt,
                     suffix=suffix,
@@ -259,7 +259,7 @@ def query():
                     stop=stop_sequence,
                 )
             else:
-                response = openai.Completion.create(
+                response = openai.chat.completions.create(  # NOTE: originally was openai.Completion.create, but that was deprecated
                     engine=engine,
                     prompt=prompt,
                     n=n,
@@ -345,7 +345,7 @@ def get_log():
     # domain = content["domain"] if "domain" in content else None
 
     # Retrieve the latest list of logs
-    log_paths = retrieve_log_paths(args.replay_dir)
+    log_paths = retrieve_log_paths(args.replay_dir)  # pylint: disable=possibly-used-before-assignment
 
     try:
         log_path = log_paths[session_id]
@@ -396,7 +396,7 @@ def parse_logs():
 
     try:
         # Step 2
-        actions_analyzer = SameSentenceMergeAnalyzer(last_action=current_action_in_progress, raw_logs=logs)
+        actions_analyzer = SameSentenceMergeAnalyzer(last_action=current_action_in_progress, raw_logs=logs)  # pylint: disable=used-before-assignment
 
         # Step 3
         current_action_in_progress = actions_analyzer.last_action
@@ -404,7 +404,9 @@ def parse_logs():
         for action in new_actions:
             action["level_1_action_type"] = action["action_type"]
 
-        new_actions = actions_analyzer.actions_lst + [convert_last_action_to_complete_action(last_action)]
+        new_actions = actions_analyzer.actions_lst + [
+            convert_last_action_to_complete_action(actions_analyzer.last_action)
+        ]  # NOTE: originally was last_action but that variable was not defined
         new_actions = parse_level_3_actions(
             {"current_session": new_actions}, similarity_fcn=get_spacy_similarity
         )["current_session"]
