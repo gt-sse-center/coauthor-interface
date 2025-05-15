@@ -1,8 +1,10 @@
 import importlib
+from unittest.mock import MagicMock, call, patch
+
 import pytest
-from unittest.mock import patch, MagicMock, call
-from coauthor_interface.backend.api_server import app
+
 import coauthor_interface.backend.api_server as srv
+from coauthor_interface.backend.api_server import app
 
 
 @pytest.fixture
@@ -50,14 +52,10 @@ def test_query_dev_mode_returns_empty(client, monkeypatch):
 @patch("coauthor_interface.backend.api_server.read_access_codes")
 @patch("coauthor_interface.backend.api_server.read_prompts")
 @patch("coauthor_interface.backend.api_server.read_examples")
-@patch(
-    "coauthor_interface.backend.api_server.append_session_to_file"
-)  # Patch to prevent file writes
+@patch("coauthor_interface.backend.api_server.append_session_to_file")  # Patch to prevent file writes
 @patch("coauthor_interface.backend.api_server.print_current_sessions")
 @patch("coauthor_interface.backend.api_server.print_verbose")
-@patch(
-    "coauthor_interface.backend.api_server.gc.collect"
-)  # Patch to avoid running garbage collection
+@patch("coauthor_interface.backend.api_server.gc.collect")  # Patch to avoid running garbage collection
 def test_start_session_success(
     mock_gc,
     mock_print_verbose,
@@ -227,9 +225,7 @@ def test_end_session_missing_session(
     assert data["verification_code"] == "SERVER_ERROR"
 
 
-@patch(
-    "coauthor_interface.backend.api_server.append_session_to_file"
-)  # Patch to prevent file writes
+@patch("coauthor_interface.backend.api_server.append_session_to_file")  # Patch to prevent file writes
 @patch("coauthor_interface.backend.api_server.read_access_codes")
 @patch("coauthor_interface.backend.api_server.read_prompts")
 @patch("coauthor_interface.backend.api_server.read_examples")
@@ -344,10 +340,11 @@ def test_get_log_invalid_session(mock_retrieve_paths, client):
 
 
 # --- Happy path tests ---
-@patch("coauthor_interface.backend.api_server.openai.Completion.create")
+@patch("coauthor_interface.backend.api_server.openai.chat.completions.create")
 @patch("coauthor_interface.backend.api_server.parse_suggestion")
 @patch("coauthor_interface.backend.api_server.parse_probability")
 @patch("coauthor_interface.backend.api_server.filter_suggestions")
+@patch("coauthor_interface.backend.api_server.openai.api_key", "fake-api-key")  # Mock the API key
 def test_query_success(
     mock_filter,
     mock_prob,

@@ -1,6 +1,7 @@
-import os
 import csv
 import json
+import os
+
 from coauthor_interface.backend.access_code import AccessCodeConfig
 
 
@@ -26,10 +27,10 @@ def read_log(log_path):
     """Read a log file."""
     log = []
     if log_path.endswith(".json"):
-        with open(log_path, "r") as f:
+        with open(log_path) as f:
             log = json.load(f)
     elif log_path.endswith(".jsonl"):
-        with open(log_path, "r") as f:
+        with open(log_path) as f:
             for line in f:
                 log.append(json.loads(line))
     else:
@@ -53,7 +54,7 @@ def read_examples(config_dir):
 
     for path in paths:
         name = os.path.basename(path)[:-4]
-        with open(path, "r") as f:
+        with open(path) as f:
             text = f.read().replace("\\n", "\n")
             text = text + " "
         examples[name] = text
@@ -95,7 +96,7 @@ def read_access_codes(config_dir):
 
     # Read access codes with configs
     for path in paths:
-        with open(path, "r") as f:
+        with open(path) as f:
             input_file = csv.DictReader(f)
 
             for row in input_file:
@@ -111,7 +112,7 @@ def read_access_codes(config_dir):
 
 def update_metadata(metadata, metadata_path):
     """Update metadata with the most recent history."""
-    with open(metadata_path, "r") as f:
+    with open(metadata_path) as f:
         lines = f.read().split("\n")
         for line in lines:
             if not line:  # Skip empty line at the end
@@ -129,7 +130,7 @@ def read_blocklist(config_dir):
     path = os.path.join(config_dir, "blocklist.txt")
 
     blocklist = set()
-    with open(path, "r") as f:
+    with open(path) as f:
         lines = f.read().split("\n")
         for line in lines:
             if not line:  # Skip empty line at the end
