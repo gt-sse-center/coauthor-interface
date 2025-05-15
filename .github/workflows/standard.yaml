@@ -47,5 +47,5 @@ jobs:
         run: uvx ruff check --verbose
 
       - name: Validate Tests
-        run: uv run pytest
+        run: uv run python -m spacy download en_core_web_md && uv run pytest
         
