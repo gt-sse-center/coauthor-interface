@@ -340,10 +340,11 @@ def test_get_log_invalid_session(mock_retrieve_paths, client):
 
 
 # --- Happy path tests ---
-@patch("coauthor_interface.backend.api_server.openai.Completion.create")
+@patch("coauthor_interface.backend.api_server.openai.chat.completions.create")
 @patch("coauthor_interface.backend.api_server.parse_suggestion")
 @patch("coauthor_interface.backend.api_server.parse_probability")
 @patch("coauthor_interface.backend.api_server.filter_suggestions")
+@patch("coauthor_interface.backend.api_server.openai.api_key", "fake-api-key")  # Mock the API key
 def test_query_success(
     mock_filter,
     mock_prob,

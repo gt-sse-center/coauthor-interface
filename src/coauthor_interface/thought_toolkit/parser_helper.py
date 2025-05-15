@@ -1,5 +1,7 @@
+import ipdb
+
 # Need helper functions from utils.py
-import utils
+from coauthor_interface.thought_toolkit import utils
 
 
 def apply_text_operations(doc, mask, ops, source, debug=False):
@@ -50,8 +52,6 @@ def apply_text_operations(doc, mask, ops, source, debug=False):
                 if "image" in insert_doc:
                     print("Skipping invalid object insertion (image)")
                 else:
-                    import ipdb
-
                     ipdb.set_trace()
                     print(insert_doc)
             else:
