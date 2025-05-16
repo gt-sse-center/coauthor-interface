@@ -81,7 +81,7 @@ def parse_probability(logprobs):
         "text": "\n\n"
         }
     """
-    logprob = sum(logprobs["token_logprobs"])
+    logprob = sum(logprobs.token_logprobs)
     prob = np.e**logprob
     return prob * 100
 

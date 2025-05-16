@@ -10,6 +10,7 @@ from argparse import ArgumentParser
 from time import time
 
 import openai
+from openai import OpenAI
 from flask import Flask, jsonify, request
 from flask_cors import CORS, cross_origin
 
@@ -184,6 +185,8 @@ def query():
     content = request.json
     session_id = content["session_id"]
 
+    print(content)
+
     # NOTE: commenting out for ruff
     # domain = content["domain"]
 
@@ -243,10 +246,11 @@ def query():
             # DEV_MODE: return no suggestions
             suggestions = []
         else:
+            client = OpenAI(api_key=api_keys[("openai", "default")])
             if "---" in prompt:  # If the demarcation is there, then suggest an insertion
                 prompt, suffix = prompt.split("---")
-                response = openai.chat.completions.create(  # NOTE: originally was openai.Completion.create, but that was deprecated
-                    engine=engine,
+                response = client.completions.create(  # NOTE: originally was openai.Completion.create, but that was deprecated
+                    model="gpt-3.5-turbo-instruct",
                     prompt=prompt,
                     suffix=suffix,
                     n=n,
@@ -258,9 +262,10 @@ def query():
                     logprobs=10,
                     stop=stop_sequence,
                 )
+                print("response is ", response)
             else:
-                response = openai.chat.completions.create(  # NOTE: originally was openai.Completion.create, but that was deprecated
-                    engine=engine,
+                response = client.completions.create(  # NOTE: originally was openai.Completion.create, but that was deprecated
+                    model="gpt-3.5-turbo-instruct",
                     prompt=prompt,
                     n=n,
                     max_tokens=max_tokens,
@@ -271,8 +276,9 @@ def query():
                     logprobs=10,
                     stop=stop_sequence,
                 )
+                print("response is ", response)
             suggestions = []
-            for choice in response["choices"]:
+            for choice in response.choices:
                 suggestion = parse_suggestion(choice.text, results["after_prompt"], stop_rules)
                 probability = parse_probability(choice.logprobs)
                 suggestions.append((suggestion, probability, engine))
@@ -492,6 +498,8 @@ if __name__ == "__main__":
     global intervention_on
     intervention_on = False
     #### NEW VARIABLES END ####
+
+    nltk.download("punkt", quiet=True)
 
     app.run(
         host="0.0.0.0",
