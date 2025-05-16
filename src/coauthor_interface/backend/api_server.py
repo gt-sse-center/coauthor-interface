@@ -185,8 +185,6 @@ def query():
     content = request.json
     session_id = content["session_id"]
 
-    print(content)
-
     # NOTE: commenting out for ruff
     # domain = content["domain"]
 
@@ -276,7 +274,6 @@ def query():
                     logprobs=10,
                     stop=stop_sequence,
                 )
-                print("response is ", response)
             suggestions = []
             for choice in response.choices:
                 suggestion = parse_suggestion(choice.text, results["after_prompt"], stop_rules)
@@ -498,8 +495,6 @@ if __name__ == "__main__":
     global intervention_on
     intervention_on = False
     #### NEW VARIABLES END ####
-
-    nltk.download("punkt", quiet=True)
 
     app.run(
         host="0.0.0.0",
