@@ -244,11 +244,11 @@ def query():
             # DEV_MODE: return no suggestions
             suggestions = []
         else:
-            client = OpenAI(api_key=api_keys[("openai", "default")])
+            client = OpenAI(api_key=api_keys[("openai", "default")])  # pylint: disable=possibly-used-before-assignment
             if "---" in prompt:  # If the demarcation is there, then suggest an insertion
                 prompt, suffix = prompt.split("---")
                 response = client.completions.create(  # NOTE: originally was openai.Completion.create, but that was deprecated
-                    model="gpt-3.5-turbo-instruct",
+                    model=engine,
                     prompt=prompt,
                     suffix=suffix,
                     n=n,
@@ -262,7 +262,7 @@ def query():
                 )
             else:
                 response = client.completions.create(  # NOTE: originally was openai.Completion.create, but that was deprecated
-                    model="gpt-3.5-turbo-instruct",
+                    model=engine,
                     prompt=prompt,
                     n=n,
                     max_tokens=max_tokens,
