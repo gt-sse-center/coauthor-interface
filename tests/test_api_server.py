@@ -340,16 +340,15 @@ def test_get_log_invalid_session(mock_retrieve_paths, client):
 
 
 # --- Happy path tests ---
-@patch("coauthor_interface.backend.api_server.openai.chat.completions.create")
+@patch("coauthor_interface.backend.api_server.OpenAI")  # Mock the OpenAI class
 @patch("coauthor_interface.backend.api_server.parse_suggestion")
 @patch("coauthor_interface.backend.api_server.parse_probability")
 @patch("coauthor_interface.backend.api_server.filter_suggestions")
-@patch("coauthor_interface.backend.api_server.openai.api_key", "fake-api-key")  # Mock the API key
 def test_query_success(
     mock_filter,
     mock_prob,
     mock_sugg,
-    mock_create,
+    mock_openai_class,
     client,
 ):
     """POST /api/query returns parsed and filtered suggestions on success."""
@@ -358,6 +357,10 @@ def test_query_success(
     # Ensure DEV_MODE is disabled for this test
     srv.DEV_MODE = False
     srv.verbose = False
+
+    # Set the api_keys global variable
+    srv.api_keys = {("openai", "default"): "fake-api-key"}
+
     # Arrange mocks
     session_id = "success-session"
     srv.SESSIONS.clear()
@@ -365,12 +368,18 @@ def test_query_success(
     srv.examples = {0: "ex"}
     srv.blocklist = []
 
+    # Set up the mock OpenAI client
+    mock_client = MagicMock()
+    mock_openai_class.return_value = mock_client
+
     # Fake OpenAI response
     fake_choice = SimpleNamespace(
         text=" sug",
         logprobs={"token_logprobs": [0.1], "tokens": ["sug"]},
     )
-    mock_create.return_value = {"choices": [fake_choice]}
+    mock_response = SimpleNamespace(choices=[fake_choice])
+    mock_client.completions.create.return_value = mock_response
+
     mock_sugg.return_value = " sug_mod"
     mock_prob.return_value = 0.42
     # filter_suggestions returns a list of tuples and counts
