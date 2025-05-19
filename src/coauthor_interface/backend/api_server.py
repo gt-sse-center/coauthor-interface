@@ -260,7 +260,6 @@ def query():
                     logprobs=10,
                     stop=stop_sequence,
                 )
-                print("response is ", response)
             else:
                 response = client.completions.create(  # NOTE: originally was openai.Completion.create, but that was deprecated
                     model="gpt-3.5-turbo-instruct",
