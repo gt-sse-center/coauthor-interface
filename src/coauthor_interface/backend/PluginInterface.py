@@ -14,7 +14,7 @@ class InterventionEnum(str, Enum):
 class Intervention:
     intervention_type: InterventionEnum
     intervention_message: Optional[str] = None
-    
+
     def __post_init__(self):
         """
         Ensures that an intervention message is provided for all intervention types
@@ -24,8 +24,7 @@ class Intervention:
 
         if self.intervention_type != InterventionEnum.NONE and not self.intervention_message:
             raise ValueError(
-                f"intervention_message is required when intervention_type is "
-                f"{self.intervention_type!r}"
+                f"intervention_message is required when intervention_type is {self.intervention_type!r}"
             )
 
 
