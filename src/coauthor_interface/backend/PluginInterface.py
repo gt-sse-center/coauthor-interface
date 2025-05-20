@@ -1,17 +1,31 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from enum import Enum
+from typing import Optional
 
 
 class InterventionEnum(str, Enum):
     # NOTE: this will be updated with new intervention types later. For now, this will only support toasts
-    toast = "toast"
+    TOAST = "toast"
+    NONE = "none"
 
 
 @dataclass
 class Intervention:
     intervention_type: InterventionEnum
-    intervention_message: str
+    intervention_message: Optional[str] = None
+
+    def __post_init__(self):
+        """
+        Ensures that an intervention message is provided for all intervention types
+        except for 'NONE'. Raises a ValueError if the intervention type is not 'NONE'
+        and the intervention message is empty or None.
+        """
+
+        if self.intervention_type != InterventionEnum.NONE and not self.intervention_message:
+            raise ValueError(
+                f"intervention_message is required when intervention_type is {self.intervention_type!r}"
+            )
 
 
 class Plugin(ABC):

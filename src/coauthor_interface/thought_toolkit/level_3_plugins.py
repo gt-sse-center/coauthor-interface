@@ -39,7 +39,7 @@ class MajorInsertMindlessEchoPlugin(Plugin):
     @staticmethod
     def intervention_action() -> Intervention:
         return Intervention(
-            intervention_type=InterventionEnum.toast,
+            intervention_type=InterventionEnum.TOAST,
             intervention_message="Detected a major insert mindless echo",
         )
 
@@ -71,6 +71,6 @@ class MinorInsertMindlessEditPlugin(Plugin):
     @staticmethod
     def intervention_action() -> Intervention:
         return Intervention(
-            intervention_type=InterventionEnum.toast,
+            intervention_type=InterventionEnum.TOAST,
             intervention_message="Detected a minor insert mindless edit",
         )
