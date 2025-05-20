@@ -15,22 +15,25 @@ class Intervention:
 
 
 class Plugin(ABC):
+    @staticmethod
     @abstractmethod
-    def get_plugin_name(self) -> str:
+    def get_plugin_name() -> str:
         """
         Name of the plugin (ex. "mindless editing", etc.)
         """
         pass
 
+    @staticmethod
     @abstractmethod
-    def detection_detected(self, logs) -> bool:
+    def detection_detected(action) -> bool:
         """
         Code that takes in logs and returns a boolean to determine whether a Level 3 action has been detected
         """
         pass
 
+    @staticmethod
     @abstractmethod
-    def intervention_action(self) -> Intervention:
+    def intervention_action() -> Intervention:
         """
         Return an Intervention instance that explains the action to take if the associated Level 3 action has been detected
         """
