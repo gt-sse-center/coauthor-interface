@@ -1,7 +1,7 @@
-import os
 import json
+from pathlib import Path
+from typing import Any
 from tqdm import tqdm
-
 
 from coauthor_interface.thought_toolkit.utils import (
     custom_serializer,
@@ -15,76 +15,48 @@ from coauthor_interface.thought_toolkit.parser_all_levels import (
 )
 
 
-# Load the raw log JSON file to be parsed and analyzed.
-script_dir = os.path.dirname(os.path.abspath(__file__))
-file_path = os.path.join(script_dir, "coauthor_logs_by_session.json")
-with open(file_path) as f:
-    coauthor_logs_by_session = json.load(f)
+def parse_level_1_actions(
+    coauthor_logs_by_session: dict[str, list[dict[str, Any]]],
+) -> dict[str, list[dict[str, Any]]]:
+    """Parse level 1 actions from the raw logs."""
+    level_1_actions_per_session = {}
+
+    for session in tqdm(coauthor_logs_by_session):
+        actions_analyzer = SameSentenceMergeAnalyzer(
+            last_action=None, raw_logs=coauthor_logs_by_session[session]
+        )
+
+        actions_lst, last_action = actions_analyzer.parse_actions_from_logs(
+            all_logs=coauthor_logs_by_session[session], last_action=None
+        )
+
+        level_1_actions_per_session[session] = actions_lst
+
+    # Add level_1_action_type to each action
+    for session_key, actions in level_1_actions_per_session.items():
+        for action in actions:
+            action["level_1_action_type"] = action["action_type"]
+
+    return level_1_actions_per_session
 
 
-level_1_actions_per_session = {}
-
-for session in tqdm(coauthor_logs_by_session):
-    actions_analyzer = SameSentenceMergeAnalyzer(last_action=None, raw_logs=coauthor_logs_by_session[session])
-
-    # actions_analyzer = TinyDeleteMergeAnalyzer(
-    #     last_action=None,
-    #     raw_logs=coauthor_logs_by_session[session]
-    # )
-
-    actions_lst, last_action = actions_analyzer.parse_actions_from_logs(
-        all_logs=coauthor_logs_by_session[session], last_action=None
-    )
-
-    level_1_actions_per_session[session] = actions_lst
-
-# Add a 'level_1_action_type' key to each action for further classification.
-for session_key, actions in level_1_actions_per_session.items():
-    for action in actions:
-        action["level_1_action_type"] = action["action_type"]
-
-# Save the parsed output to a JSON file in the same directory.
-# The file is named 'level_1_actions_per_session.json' and contains the structured
-# actions organized by session.
-output_file = os.path.join(script_dir, "level_1_actions_per_session.json")
-with open(output_file, "w") as f:
-    json.dump(level_1_actions_per_session, f, default=custom_serializer)
+def parse_level_2_actions_from_level_1(
+    level_1_actions: dict[str, list[dict[str, Any]]],
+) -> dict[str, list[dict[str, Any]]]:
+    """Parse level 2 actions from level 1 actions."""
+    return parse_level_2_actions(level_1_actions, similarity_fcn=get_spacy_similarity)
 
 
-# Parse level 2 actions and compute metrics for each session.
-level_2_actions_per_session = parse_level_2_actions(
-    level_1_actions_per_session, similarity_fcn=get_spacy_similarity
-)
-
-# Save the parsed output to a JSON file in the same directory.
-# The file is named 'level_2_actions_per_session.json' and contains the structured
-# actions organized by session.
-output_file = os.path.join(script_dir, "level_2_actions_per_session.json")
-with open(output_file, "w") as f:
-    json.dump(level_2_actions_per_session, f, default=custom_serializer)
+def parse_level_3_actions_from_level_2(
+    level_2_actions: dict[str, list[dict[str, Any]]],
+) -> dict[str, list[dict[str, Any]]]:
+    """Parse level 3 actions from level 2 actions."""
+    return parse_level_3_actions(level_2_actions, similarity_fcn=get_spacy_similarity)
 
 
-# Parse level 3 actions and compute additional metrics for each session.
-level_3_actions_per_session = parse_level_3_actions(
-    level_2_actions_per_session, similarity_fcn=get_spacy_similarity
-)
-
-# Save the parsed output to a JSON file in the same directory.
-# The file is named 'level_3_actions_per_session.json' and contains the structured
-# actions organized by session.
-output_file = os.path.join(script_dir, "level_3_actions_per_session.json")
-with open(output_file, "w") as f:
-    json.dump(level_3_actions_per_session, f, default=custom_serializer)
-
-
-# Optional step after completing all parsing steps above.
-# This step involves:
-# - Extracting unique action types from a specified level (e.g., 'level_3_action_type') for prioritization.
-# - Defining a custom priority list to control the sorting and assignment of action types.
-# - Assigning a prioritized 'action_type' to each action based on the provided priority list.
-def populate_priority_list(actions_dict, level):
-    """Generates a list of unique action types from a specific level in the actions dictionary."""
-    priority_set = set()
+def populate_priority_list(actions_dict: dict[str, list[dict[str, Any]]], level: str) -> list[str]:
+    """Generate a list of unique action types from a specific level."""
+    priority_set: set[str] = set()
     for _, actions in actions_dict.items():
         for action in actions:
             if level in action:
@@ -92,8 +64,10 @@ def populate_priority_list(actions_dict, level):
     return list(priority_set)
 
 
-def action_type_priority_sort(priority_list, actions_dict):
-    """Sorts and assigns action types in the actions dictionary based on a predefined priority list."""
+def action_type_priority_sort(
+    priority_list: list[str], actions_dict: dict[str, list[dict[str, Any]]]
+) -> dict[str, list[dict[str, Any]]]:
+    """Sort and assign action types based on priority list."""
     for _, actions in actions_dict.items():
         for action in actions:
             # Iterate through the priority list and match against all levels
@@ -108,29 +82,49 @@ def action_type_priority_sort(priority_list, actions_dict):
     return actions_dict
 
 
-# Example usage 1: Generate a priority list of all action types from level 3 actions.
-# This extracts unique 'level_3_action_type' values for prioritization and sorting.
-level_3_priority_list = populate_priority_list(level_3_actions_per_session, level="level_3_action_type")
+def process_logs(input_file: Path, output_dir: Path) -> None:
+    """Process logs through all levels of analysis and save results."""
+    # Create output directory if it doesn't exist
+    output_dir.mkdir(parents=True, exist_ok=True)
 
-# Example usage 2: Define a custom priority list to explicitly control the sorting order of actions.
-# The custom priority list takes precedence and is used to sort actions based on importance.
-custom_priority_list = ["minor_insert_mindless_edit", "major_insert_major_semantic_diff"]
+    # Load input logs
+    with open(input_file) as f:
+        coauthor_logs_by_session = json.load(f)
 
-# Choose the custom priority list for sorting.
-# Iterate through actions, match their types to the custom priority list, and assign a new 'action_type'.
-action_type_with_priority_per_session = action_type_priority_sort(
-    custom_priority_list, level_3_actions_per_session
-)
+    # Process through all levels
+    level_1_actions = parse_level_1_actions(coauthor_logs_by_session)
+    level_2_actions = parse_level_2_actions_from_level_1(level_1_actions)
+    level_3_actions = parse_level_3_actions_from_level_2(level_2_actions)
 
-# Save the sorted actions with prioritized types to a JSON file.
-# The output file 'action_type_with_priority_per_session.json' contains actions
-# with their types reassigned based on the custom priority list.
-output_file = os.path.join(script_dir, "action_type_with_priority_per_session.json")
-with open(output_file, "w") as f:
-    json.dump(action_type_with_priority_per_session, f, default=custom_serializer)
+    # Generate priority-based actions
+    custom_priority_list = [
+        "minor_insert_mindless_edit",
+        "major_insert_major_semantic_diff",
+    ]
+    priority_actions = action_type_priority_sort(custom_priority_list, level_3_actions)
+
+    # Save all results
+    output_files = {
+        "level_1_actions_per_session.json": level_1_actions,
+        "level_2_actions_per_session.json": level_2_actions,
+        "level_3_actions_per_session.json": level_3_actions,
+        "action_type_with_priority_per_session.json": priority_actions,
+    }
+
+    for filename, data in output_files.items():
+        output_path = output_dir / filename
+        with open(output_path, "w") as f:
+            json.dump(data, f, default=custom_serializer)
+
 
 # After running the entire Python file, you will generate four different JSON files:
 # 1. 'level_1_actions_per_session.json' - Contains the parsed level 1 actions organized by session.
 # 2. 'level_2_actions_per_session.json' - Builds upon level 1 actions, adding semantic differences and coordination scores.
 # 3. 'level_3_actions_per_session.json' - Adds advanced interpretations, such as topic shifts and mindless edits or echoes.
 # 4. 'action_type_with_priority_per_session.json' - Applies priority-based sorting to action types for refined analysis.
+if __name__ == "__main__":
+    # Example usage
+    script_dir = Path(__file__).parent
+    input_file = script_dir / "small_logs_for_test.json"
+    output_dir = script_dir / "output"
+    process_logs(input_file, output_dir)
