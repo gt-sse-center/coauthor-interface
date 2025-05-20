@@ -70,3 +70,6 @@ class AccessCodeConfig:
 
         if "additional_data" in row and row["additional_data"] != "na":
             self.additional_data = row["additional_data"]
+
+        if "engine" in row:
+            self.engine = row["engine"]

@@ -10,6 +10,7 @@ from argparse import ArgumentParser
 from time import time
 
 import openai
+from openai import OpenAI
 from flask import Flask, jsonify, request
 from flask_cors import CORS, cross_origin
 
@@ -243,10 +244,11 @@ def query():
             # DEV_MODE: return no suggestions
             suggestions = []
         else:
+            client = OpenAI(api_key=api_keys[("openai", "default")])  # pylint: disable=possibly-used-before-assignment
             if "---" in prompt:  # If the demarcation is there, then suggest an insertion
                 prompt, suffix = prompt.split("---")
-                response = openai.chat.completions.create(  # NOTE: originally was openai.Completion.create, but that was deprecated
-                    engine=engine,
+                response = client.completions.create(  # NOTE: originally was openai.Completion.create, but that was deprecated
+                    model=engine,
                     prompt=prompt,
                     suffix=suffix,
                     n=n,
@@ -259,8 +261,8 @@ def query():
                     stop=stop_sequence,
                 )
             else:
-                response = openai.chat.completions.create(  # NOTE: originally was openai.Completion.create, but that was deprecated
-                    engine=engine,
+                response = client.completions.create(  # NOTE: originally was openai.Completion.create, but that was deprecated
+                    model=engine,
                     prompt=prompt,
                     n=n,
                     max_tokens=max_tokens,
@@ -272,7 +274,7 @@ def query():
                     stop=stop_sequence,
                 )
             suggestions = []
-            for choice in response["choices"]:
+            for choice in response.choices:
                 suggestion = parse_suggestion(choice.text, results["after_prompt"], stop_rules)
                 probability = parse_probability(choice.logprobs)
                 suggestions.append((suggestion, probability, engine))
