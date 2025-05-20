@@ -3,6 +3,10 @@
 import difflib
 
 from coauthor_interface.thought_toolkit.helper import apply_logs_to_writing
+from coauthor_interface.thought_toolkit.level_3_plugins import (
+    MajorInsertMindlessEchoPlugin,
+    MinorInsertMindlessEditPlugin,
+)
 from coauthor_interface.thought_toolkit.level_2_comparisons import (
     get_action_expansion,
     get_coordination_scores,
@@ -17,8 +21,6 @@ from coauthor_interface.thought_toolkit.level_2_comparisons import (
 from coauthor_interface.thought_toolkit.level_3_comparisons import (
     get_idea_alignment_order_on_AI,
     get_idea_alignment_order_on_minor_insert,
-    get_mindless_echo_after_AI,
-    get_mindless_edit_of_AI,
     IDEA_ALIGNMENT_MIN_WORD_COUNT,
 )
 from coauthor_interface.thought_toolkit.utils import (
@@ -1018,49 +1020,29 @@ def parse_level_3_actions(level_2_actions_per_session, similarity_fcn):
                 action["topic_shift"] = running_idea_count
 
             # Process text insert operations
-            if action.get("level_1_action_type") == "insert_text":
-                # Check for major_insert_mindless_echo
-                echo_bool, echo_similarity, echo_details = get_mindless_echo_after_AI(
-                    action, latest_accepted_suggestion, similarity_fcn
-                )
-                if echo_similarity is not None:
-                    action["level_3_info"] = {
-                        **echo_details,
-                        "similarity": echo_similarity,
-                    }
-                if echo_bool:
-                    action["level_3_action_type"] = "major_insert_mindless_echo"
-                    action_parsed = True
+            if MajorInsertMindlessEchoPlugin.detection_detected(action):
+                action["level_3_action_type"] = MajorInsertMindlessEchoPlugin.get_plugin_name()
+                action_parsed = True
 
-                # Check for minor_insert_mindless_edit if not already parsed
-                if not action_parsed:
-                    edit_bool, edit_similarity, edit_details = get_mindless_edit_of_AI(
-                        action, latest_accepted_suggestion, similarity_fcn
+            if not action_parsed and MinorInsertMindlessEditPlugin.detection_detected(action):
+                action["level_3_action_type"] = MinorInsertMindlessEditPlugin.get_plugin_name()
+                action_parsed = True
+
+            # Handle topic shifts for text insertions
+            if not action_parsed and action.get("level_1_action_type") == "insert_text":
+                if action["action_delta"][-1] >= IDEA_ALIGNMENT_MIN_WORD_COUNT:
+                    curr_idea_sentence_list = get_idea_alignment_order_on_AI(
+                        action, curr_idea_sentence_list, similarity_fcn
                     )
-                    if edit_similarity is not None:
-                        action["level_3_info"] = {
-                            **edit_details,
-                            "similarity": edit_similarity,
-                        }
-                    if edit_bool:
-                        action["level_3_action_type"] = "minor_insert_mindless_edit"
-                        action_parsed = True
-
-                # Handle topic shifts for text insertions
-                if not action_parsed:
-                    if action["action_delta"][-1] >= IDEA_ALIGNMENT_MIN_WORD_COUNT:
-                        curr_idea_sentence_list = get_idea_alignment_order_on_AI(
-                            action, curr_idea_sentence_list, similarity_fcn
-                        )
-                        if len(curr_idea_sentence_list) == 1:  # New idea detected
-                            running_idea_count += 1
-                        action["topic_shift"] = running_idea_count
-                    else:
-                        curr_idea_sentence_list, new_idea = get_idea_alignment_order_on_minor_insert(
-                            action, curr_idea_sentence_list, similarity_fcn
-                        )
-                        if new_idea:
-                            running_idea_count += 1
-                        action["topic_shift"] = running_idea_count
+                    if len(curr_idea_sentence_list) == 1:  # New idea detected
+                        running_idea_count += 1
+                    action["topic_shift"] = running_idea_count
+                else:
+                    curr_idea_sentence_list, new_idea = get_idea_alignment_order_on_minor_insert(
+                        action, curr_idea_sentence_list, similarity_fcn
+                    )
+                    if new_idea:
+                        running_idea_count += 1
+                    action["topic_shift"] = running_idea_count
 
     return level_2_actions_per_session
