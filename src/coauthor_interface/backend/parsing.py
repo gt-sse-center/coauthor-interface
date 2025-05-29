@@ -33,6 +33,38 @@ def parse_prompt(text, max_tokens, context_window_size):
     return results
 
 
+def parse_modified_prompt(text, max_tokens, context_window_size):
+    """Separate prompt and whitespace at the end while retaining newlines."""
+
+    # Check the number of tokens in a prompt
+    max_prompt_len = (context_window_size - max_tokens) * 4
+
+    before_prompt = ""
+    prompt = text
+    if len(text) > max_prompt_len:
+        before_prompt = text[:-max_prompt_len]
+        prompt = text[-max_prompt_len:]
+
+    lines = prompt.split("\n")
+    removed = lines[-1].rstrip()
+
+    effective_prompt = "\n".join(lines[:-1] + [removed])
+    after_prompt = lines[-1][len(removed) :]  # Contains removed whitespace at the end
+
+    socratic_modification = "\n\nBased on the text above, ask four questions on what has not yet been addressed in the writing. \
+                Please ask questions in the following format:\n1. [QUESTION 1]\n2. [QUESTION 2]\n3. [QUESTION 3]\n4. [QUESTION 4"
+
+    modified_prompt = effective_prompt + socratic_modification
+
+    results = {
+        "text_len": len(text),
+        "before_prompt": before_prompt,
+        "effective_prompt": modified_prompt,
+        "after_prompt": after_prompt,
+    }
+    return results
+
+
 def parse_probability(logprobs):
     """
     Parameters:

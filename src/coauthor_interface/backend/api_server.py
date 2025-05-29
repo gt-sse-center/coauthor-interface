@@ -26,11 +26,13 @@ from coauthor_interface.backend.helper import (
     retrieve_log_paths,
     save_log_to_jsonl,
     check_for_mindless_echoing,
+    check_for_mindless_editing,
 )
 from coauthor_interface.backend.parsing import (
     filter_suggestions,
     parse_probability,
     parse_prompt,
+    parse_modified_prompt,
     parse_suggestion,
 )
 
@@ -39,7 +41,9 @@ from coauthor_interface.thought_toolkit.parser_all_levels import (
     parse_level_3_actions,
 )
 
-from coauthor_interface.thought_toolkit.parser_helper import convert_last_action_to_complete_action
+from coauthor_interface.thought_toolkit.parser_helper import (
+    convert_last_action_to_complete_action,
+)
 from coauthor_interface.thought_toolkit.utils import get_spacy_similarity
 
 from coauthor_interface.backend.reader import (
@@ -109,6 +113,7 @@ def start_session():
         "start_timestamp": time(),
         "last_query_timestamp": time(),
         "verification_code": verification_code,
+        "intervention": "alert_writer",
     }
     SESSIONS[session_id].update(config.convert_to_dict())
 
@@ -182,6 +187,8 @@ def end_session():
 @app.route("/api/query", methods=["POST"])
 @cross_origin(origin="*")
 def query():
+    global intervention_on, api_keys, args, metadata, metadata_path, verbose
+
     content = request.json
     session_id = content["session_id"]
 
@@ -235,7 +242,10 @@ def query():
 
     # Parse doc
     doc = content["doc"]
-    results = parse_prompt(example_text + doc, max_tokens, context_window_size)
+    if intervention_on == "modify_query" and check_for_mindless_editing(parsed_actions):  # pylint: disable=possibly-used-before-assignment
+        results = parse_modified_prompt(doc, max_tokens, context_window_size)
+    else:
+        results = parse_prompt(example_text + doc, max_tokens, context_window_size)
     prompt = results["effective_prompt"]
 
     # Query GPT-3
@@ -390,6 +400,8 @@ def parse_logs():
     4. Goes through the list of new actions and if switches the
     intervention_on variable if topic shift is detected
     """
+    global current_action_in_progress, parsed_actions, intervention_on
+
     # Step 1
     content = request.json
     session_id = content["session_id"]
@@ -398,7 +410,19 @@ def parse_logs():
 
     try:
         # Step 2
-        actions_analyzer = SameSentenceMergeAnalyzer(last_action=current_action_in_progress, raw_logs=logs)  # pylint: disable=used-before-assignment
+        print(
+            "parse_logs called :",
+            {
+                "session_id": session_id,
+                "domain": domain,
+                "logs_length": len(logs) if logs else 0,
+            },
+        )
+        actions_analyzer = SameSentenceMergeAnalyzer(
+            last_action=current_action_in_progress,
+            raw_logs=logs,  # pylint: disable=used-before-assignment
+        )
+        print("actions_analyzer created")
 
         # Step 3
         current_action_in_progress = actions_analyzer.last_action
@@ -406,15 +430,21 @@ def parse_logs():
         for action in new_actions:
             action["level_1_action_type"] = action["action_type"]
 
+        print("through for loop")
         new_actions = actions_analyzer.actions_lst + [
             convert_last_action_to_complete_action(actions_analyzer.last_action)
         ]  # NOTE: originally was last_action but that variable was not defined
+        print("new actions defined")
         new_actions = parse_level_3_actions(
             {"current_session": new_actions}, similarity_fcn=get_spacy_similarity
         )["current_session"]
+
+        print("actions detected")
         parsed_actions += new_actions[:-1]  # update the parsed actions parameter
 
         # Check for `major_insert_mindless_echo` pattern and
+        print("checking sessions global var")
+        print(SESSIONS[session_id])
         if SESSIONS[session_id]["intervention"] == "alert_writer" and check_for_mindless_echoing(new_actions):
             return jsonify({"status": SUCCESS, "alert_author": True})
         else:
