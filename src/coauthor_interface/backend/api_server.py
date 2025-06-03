@@ -187,7 +187,7 @@ def end_session():
 @app.route("/api/query", methods=["POST"])
 @cross_origin(origin="*")
 def query():
-    global intervention_on, api_keys, args, metadata, metadata_path, verbose
+    # global intervention_on, api_keys, args, metadata, metadata_path, verbose
 
     content = request.json
     session_id = content["session_id"]
@@ -419,7 +419,7 @@ def parse_logs():
             },
         )
         actions_analyzer = SameSentenceMergeAnalyzer(
-            last_action=current_action_in_progress,
+            last_action=current_action_in_progress,  # pylint: disable=used-before-assignment
             raw_logs=logs,  # pylint: disable=used-before-assignment
         )
         print("actions_analyzer created")
