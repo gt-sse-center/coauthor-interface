@@ -3,10 +3,6 @@
 import difflib
 
 from coauthor_interface.thought_toolkit.helper import apply_logs_to_writing
-from coauthor_interface.thought_toolkit.level_3_plugins import (
-    MajorInsertMindlessEchoPlugin,
-    MinorInsertMindlessEditPlugin,
-)
 from coauthor_interface.thought_toolkit.level_2_comparisons import (
     get_action_expansion,
     get_coordination_scores,
@@ -29,6 +25,8 @@ from coauthor_interface.thought_toolkit.utils import (
     get_timestamp,
     sent_tokenize,
 )
+
+from coauthor_interface.thought_toolkit.active_plugins import ACTIVE_PLUGINS
 
 ########################
 
@@ -999,7 +997,7 @@ def parse_level_2_actions(level_1_actions_per_session, similarity_fcn):
 # This process involves:
 # - Tracking the latest accepted suggestions to align with user insertions.
 # - Identifying patterns like "mindless echo" and "mindless edit" of AI suggestions.
-# - Detecting topic shifts and counting new ideas.
+# - Detecting topic shifts and counting new ideas
 def parse_level_3_actions(level_2_actions_per_session, similarity_fcn):
     for session_key, actions_lst in level_2_actions_per_session.items():
         latest_accepted_suggestion = ""
@@ -1020,13 +1018,11 @@ def parse_level_3_actions(level_2_actions_per_session, similarity_fcn):
                 action["topic_shift"] = running_idea_count
 
             # Process text insert operations
-            if MajorInsertMindlessEchoPlugin.detection_detected(action):
-                action["level_3_action_type"] = MajorInsertMindlessEchoPlugin.get_plugin_name()
-                action_parsed = True
-
-            if not action_parsed and MinorInsertMindlessEditPlugin.detection_detected(action):
-                action["level_3_action_type"] = MinorInsertMindlessEditPlugin.get_plugin_name()
-                action_parsed = True
+            for plugin in ACTIVE_PLUGINS:
+                if plugin.detection_detected(action):
+                    action["level_3_action_type"] = plugin.get_plugin_name()
+                    action_parsed = True
+                    break
 
             # Handle topic shifts for text insertions
             if not action_parsed and action.get("level_1_action_type") == "insert_text":

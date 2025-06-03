@@ -445,6 +445,7 @@ def parse_logs():
         # Check for `major_insert_mindless_echo` pattern and
         print("checking sessions global var")
         print(SESSIONS[session_id])
+
         if SESSIONS[session_id]["intervention"] == "alert_writer" and check_for_mindless_echoing(new_actions):
             return jsonify({"status": SUCCESS, "alert_author": True})
         else:
