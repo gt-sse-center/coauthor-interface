@@ -6,18 +6,18 @@ async function startSession(accessCode) {
     if (debug) {
       console.log(session);
     }
-    if (session['status'] == FAILURE){
+    if (session['status'] == FAILURE) {
       alert(session['message']);
     } else {
       sessionId = session.session_id;
       example = session.example;
-      exampleActualText = session.example_text; 
+      exampleActualText = session.example_text;
       promptText = session.prompt_text;
 
       setPrompt(promptText);
       startTimer(session.session_length);
       promptLength = promptText.length;  // Number of characters
-    
+
       if (isCounterEnabled == true) {
         resetCounter();
       }
@@ -34,7 +34,7 @@ async function startSession(accessCode) {
       stop = session.stop;
       engine = session.engine;
     }
-  } catch(e) {
+  } catch (e) {
     alert('Start sesion error:' + e);
     console.log(e);
   } finally {
@@ -73,7 +73,7 @@ async function endSessionWithReplay() {
 const delay = ms => new Promise(res => setTimeout(res, ms));
 var prevEventName = '';
 
-async function replay(replayLogs, start){
+async function replay(replayLogs, start) {
   emptyDropdownMenu();
   quill.setText('');
 
@@ -134,7 +134,7 @@ async function replay(replayLogs, start){
   $timeTotal.html(minutes + ':' + seconds);
 
   // If start is specified, initialize with currentDoc of the start log
-  if (logCurrent > 0){
+  if (logCurrent > 0) {
     setText(replayLogs[0].currentDoc);
     setCursor(replayLogs[0].currentCursor);
   }
@@ -186,13 +186,13 @@ async function replay(replayLogs, start){
 
 }
 
-async function replayLogsWithSessionId(sessionId, range){
+async function replayLogsWithSessionId(sessionId, range) {
   try {
     results = await wwai.api.getLog(sessionId);
 
     let start = parseInt(range['start']);
     let end = parseInt(range['end']);
-    if (end < 0){
+    if (end < 0) {
       end = results['logs'].length;
     }
     replayLogs = results['logs'].slice(start, end + 1);
@@ -201,16 +201,16 @@ async function replayLogsWithSessionId(sessionId, range){
 
   } catch (e) {
     const message = 'We could not get the requested writing session (' + sessionId + ') '
-                    + 'due to a server error or an invalid session ID.\n\n'
-                    + 'Please notify the issue to ' + contactEmail + ' '
-                    + 'and try again later.';
+      + 'due to a server error or an invalid session ID.\n\n'
+      + 'Please notify the issue to ' + contactEmail + ' '
+      + 'and try again later.';
     setText(message);
     $('#editor-view').addClass('error');
     return;
   }
 }
 
-async function showFinalStoryWithSessionId(sessionId){
+async function showFinalStoryWithSessionId(sessionId) {
   console.log('Final mode: logs with session ID: ' + sessionId);
   try {
     results = await wwai.api.getLog(sessionId);
@@ -231,7 +231,7 @@ async function showFinalStoryWithSessionId(sessionId){
   quill.setSelection(lastLog.currentCursor);
 }
 
-async function loadLogsWithSessionId(newSessionId){
+async function loadLogsWithSessionId(newSessionId) {
   try {
     results = await wwai.api.getLog(newSessionId);
 
@@ -275,10 +275,10 @@ async function loadLogsWithSessionId(newSessionId){
     $('#save-btn').removeClass('do-not-display');
   } catch (e) {
     const message = 'We could not get the requested writing session (' + sessionId + ') '
-                    + 'due to a server error or an invalid session ID.\n\n'
-                    + e + '\n\n'
-                    + 'Please notify the issue to ' + contactEmail + ' '
-                    + 'and try again later.';
+      + 'due to a server error or an invalid session ID.\n\n'
+      + e + '\n\n'
+      + 'Please notify the issue to ' + contactEmail + ' '
+      + 'and try again later.';
     alert(message);
     return;
   } finally {
@@ -337,7 +337,7 @@ function queryGPT3() {
 
   $.ajax({
     url: serverURL + '/api/query',
-    beforeSend: function() {
+    beforeSend: function () {
       hideDropdownMenu(EventSource.API);
       setCursorAtTheEnd();
       showLoadingSignal('Getting suggestions...');
@@ -347,7 +347,7 @@ function queryGPT3() {
     data: JSON.stringify(data),
     crossDomain: true,
     contentType: 'application/json; charset=utf-8',
-    success: function(data) {
+    success: function (data) {
       hideLoadingSignal();
       if (data.status == SUCCESS) {
         if (data.original_suggestions.length > 0) {
@@ -361,13 +361,13 @@ function queryGPT3() {
           showDropdownMenu('api');
         } else {
           let msg = 'Please try again!\n\n'
-                    + 'Why is this happening? The system\n'
-                    + '- could not think of suggestions (' + data.counts.empty_cnt + ')\n'
-                    + '- generated same suggestions as before (' + data.counts.duplicate_cnt + ')\n'
-                    + '- generated suggestions that contained banned words (' + data.counts.bad_cnt + ')\n';
+            + 'Why is this happening? The system\n'
+            + '- could not think of suggestions (' + data.counts.empty_cnt + ')\n'
+            + '- generated same suggestions as before (' + data.counts.duplicate_cnt + ')\n'
+            + '- generated suggestions that contained banned words (' + data.counts.bad_cnt + ')\n';
           console.log(msg);
 
-          logEvent(EventName.SUGGESTION_FAIL, EventSource.API, textDelta=msg);
+          logEvent(EventName.SUGGESTION_FAIL, EventSource.API, textDelta = msg);
           alert("The system could not generate suggestions. Please try again.");
         }
 
@@ -375,9 +375,58 @@ function queryGPT3() {
         alert(data.message);
       }
     },
-    error: function() {
+    error: function () {
       hideLoadingSignal();
       alert("Could not get suggestions. Press tab key to try again! If the problem persists, please send a screenshot of this message to " + contactEmail + ". Our sincere apologies for the inconvenience!");
+    }
+  });
+}
+
+function parse_logs() {
+  /* Function that sends data from the frontend to the
+  backend via /api/parse_logs route. It 
+  1. Puts the raw logs into the ajax request
+  2. Awaits for the response, and displays an error 
+  message if needed.
+  */
+  console.log('parse_logs called with:', {
+    sessionId: sessionId,
+    domain: domain,
+    logsLength: logs ? logs.length : 0
+  });
+
+  const data = {
+    'session_id': sessionId,
+    'domain': domain,
+    'logs': logs
+  }
+  $.ajax({
+    url: serverURL + '/api/parse_logs',
+    beforeSend: function () {
+      hideDropdownMenu(EventSource.API);
+      setCursorAtTheEnd();
+      showLoadingSignal('Getting suggestions...');
+    },
+    type: 'POST',
+    dataType: 'json',
+    data: JSON.stringify(data),
+    crossDomain: true,
+    contentType: 'application/json; charset=utf-8',
+    success: function (data) {
+      console.log('parse_logs success:', data);
+      hideLoadingSignal();
+      if (data.status != SUCCESS) {
+        console.log('parse_logs error:', data.message);
+        alert(data.message);
+      }
+      if (data.alert_author) {
+        alert("Echoing of AI's suggestions is detected...")
+      }
+    },
+    error: function (xhr, status, error) {
+      console.error('parse_logs error:', { xhr, status, error });
+      hideLoadingSignal();
+      alert("Could not parse the logs. ");
     }
   });
 }
