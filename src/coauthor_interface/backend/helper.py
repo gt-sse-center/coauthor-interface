@@ -259,7 +259,6 @@ def check_for_mindless_echoing(actions_lst, n_actions=7, patter_count_threshold=
     patter are detected, the functionr returns True."""
     counter = 0
 
-    # print("actions_lst", actions_lst)
     for action in actions_lst[:n_actions]:
         if "level_3_action_type" in action and action["level_3_action_type"] == "major_insert_mindless_echo":
             counter += 1

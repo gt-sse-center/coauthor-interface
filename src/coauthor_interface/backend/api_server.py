@@ -187,8 +187,6 @@ def end_session():
 @app.route("/api/query", methods=["POST"])
 @cross_origin(origin="*")
 def query():
-    # global intervention_on, api_keys, args, metadata, metadata_path, verbose
-
     content = request.json
     session_id = content["session_id"]
 
@@ -410,19 +408,10 @@ def parse_logs():
 
     try:
         # Step 2
-        print(
-            "parse_logs called :",
-            {
-                "session_id": session_id,
-                "domain": domain,
-                "logs_length": len(logs) if logs else 0,
-            },
-        )
         actions_analyzer = SameSentenceMergeAnalyzer(
             last_action=current_action_in_progress,  # pylint: disable=used-before-assignment
             raw_logs=logs,  # pylint: disable=used-before-assignment
         )
-        print("actions_analyzer created")
 
         # Step 3
         current_action_in_progress = actions_analyzer.last_action
@@ -430,21 +419,17 @@ def parse_logs():
         for action in new_actions:
             action["level_1_action_type"] = action["action_type"]
 
-        print("through for loop")
         new_actions = actions_analyzer.actions_lst + [
             convert_last_action_to_complete_action(actions_analyzer.last_action)
         ]  # NOTE: originally was last_action but that variable was not defined
-        print("new actions defined")
+
         new_actions = parse_level_3_actions(
             {"current_session": new_actions}, similarity_fcn=get_spacy_similarity
         )["current_session"]
 
-        print("actions detected")
         parsed_actions += new_actions[:-1]  # update the parsed actions parameter
 
         # Check for `major_insert_mindless_echo` pattern and
-        print("checking sessions global var")
-        print(SESSIONS[session_id])
         if SESSIONS[session_id]["intervention"] == "alert_writer" and check_for_mindless_echoing(new_actions):
             return jsonify({"status": SUCCESS, "alert_author": True})
         else:
