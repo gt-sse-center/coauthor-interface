@@ -47,6 +47,7 @@ Inside the `coauthor-interface` directory, run the following to install the requ
 
 ```
 uv sync
+uv run python -m spacy download en_core_web_md
 ```
 
 **2. Add your API key(s) to use OpenAI models**
@@ -88,7 +89,7 @@ You can run the frontend using a simple Python server or host it on a third-part
 To run the frontend on a local machine, run the following command in the `./frontend` directory:
 
 ```
-python -m http.server 8000
+uv run python -m http.server 8000
 ```
 
 To run the frontend on a server, you can use a third-party platform such as [Glitch](https://glitch.com/).

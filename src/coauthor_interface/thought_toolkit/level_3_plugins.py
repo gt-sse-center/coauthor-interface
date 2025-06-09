@@ -1,4 +1,4 @@
-from coauthor_interface.backend.PluginInterface import (
+from coauthor_interface.thought_toolkit.PluginInterface import (
     Intervention,
     InterventionEnum,
     Plugin,
