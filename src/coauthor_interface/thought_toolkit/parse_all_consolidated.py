@@ -123,7 +123,7 @@ def process_logs(input_file: Path, output_dir: Path) -> None:
 # 4. 'action_type_with_priority_per_session.json' - Applies priority-based sorting to action types for refined analysis.
 if __name__ == "__main__":
     # Example usage
-    script_dir = Path(__file__).parent.parent.parent.parent / "tests"
+    script_dir = Path(__file__).parent
     input_file = script_dir / "small_logs_for_test.json"
     output_dir = script_dir / "output"
     process_logs(input_file, output_dir)

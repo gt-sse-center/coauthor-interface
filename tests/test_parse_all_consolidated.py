@@ -1,7 +1,7 @@
 import json
 from pathlib import Path
 import pytest
-from coauthor_interface.backend.parse_all_consolidated import (
+from coauthor_interface.thought_toolkit.parse_all_consolidated import (
     parse_level_1_actions,
     parse_level_2_actions_from_level_1,
     parse_level_3_actions_from_level_2,
@@ -9,7 +9,7 @@ from coauthor_interface.backend.parse_all_consolidated import (
     action_type_priority_sort,
     process_logs,
 )
-from coauthor_interface.backend.PluginInterface import (
+from coauthor_interface.thought_toolkit.PluginInterface import (
     Plugin,
     Intervention,
     InterventionEnum,
@@ -317,7 +317,7 @@ def test_process_logs_with_plugins(
     """Test processing logs with active plugins."""
     # Mock the ACTIVE_PLUGINS list in both places where it's used
     monkeypatch.setattr(
-        "coauthor_interface.backend.parse_all_consolidated.ACTIVE_PLUGINS",
+        "coauthor_interface.thought_toolkit.parse_all_consolidated.ACTIVE_PLUGINS",
         [mock_plugin, mock_plugin2],
     )
     monkeypatch.setattr(
@@ -365,7 +365,7 @@ def test_process_logs_with_plugins(
 def test_process_logs_with_empty_plugins(test_logs_file, fs, fake_output_dir, monkeypatch):
     """Test processing logs with empty ACTIVE_PLUGINS list."""
     # Mock the ACTIVE_PLUGINS list to be empty in both places
-    monkeypatch.setattr("coauthor_interface.backend.parse_all_consolidated.ACTIVE_PLUGINS", [])
+    monkeypatch.setattr("coauthor_interface.thought_toolkit.parse_all_consolidated.ACTIVE_PLUGINS", [])
     monkeypatch.setattr("coauthor_interface.thought_toolkit.parser_all_levels.ACTIVE_PLUGINS", [])
 
     # Process the keylogs - should not raise any errors
@@ -408,7 +408,7 @@ def test_plugin_detection_called(test_logs_file, fs, fake_output_dir, monkeypatc
 
     # Mock the ACTIVE_PLUGINS list with our spy plugin in both places
     monkeypatch.setattr(
-        "coauthor_interface.backend.parse_all_consolidated.ACTIVE_PLUGINS",
+        "coauthor_interface.thought_toolkit.parse_all_consolidated.ACTIVE_PLUGINS",
         [SpyMockPlugin()],
     )
     monkeypatch.setattr(
