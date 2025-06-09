@@ -28,6 +28,8 @@ def test_query_dev_mode_returns_empty(client, monkeypatch):
     srv.SESSIONS[session_id] = {"last_query_timestamp": 0}
     srv.examples = {0: ""}
     srv.blocklist = []
+    srv.intervention_on = False
+    srv.parsed_actions = []
 
     payload = {
         "session_id": session_id,
@@ -357,6 +359,10 @@ def test_query_success(
     # Ensure DEV_MODE is disabled for this test
     srv.DEV_MODE = False
     srv.verbose = False
+
+    # Initialize global variables
+    srv.intervention_on = False
+    srv.parsed_actions = []
 
     # Set the api_keys global variable
     srv.api_keys = {("openai", "default"): "fake-api-key"}
