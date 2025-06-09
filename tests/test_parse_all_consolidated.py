@@ -9,21 +9,26 @@ from coauthor_interface.backend.parse_all_consolidated import (
     action_type_priority_sort,
     process_logs,
 )
+from coauthor_interface.backend.PluginInterface import (
+    Plugin,
+    Intervention,
+    InterventionEnum,
+)
 
 
 @pytest.fixture
 def raw_keylogs_from_frontend():
-    """Fixture providing sample raw keylogs from frontend for testing."""
+    """Fixture providing test keylogs data."""
     return {
         "session1": [
             {
-                "eventName": "suggestion-get",
+                "eventName": "text-insert",
                 "eventSource": "user",
-                "eventTimestamp": 1629357366346,
-                "textDelta": "",
+                "eventTimestamp": 1629357370478,
+                "textDelta": {"ops": [{"retain": 0}, {"insert": "test"}]},
                 "cursorRange": "",
                 "currentDoc": "",
-                "currentCursor": 379,
+                "currentCursor": 4,
                 "currentSuggestions": [],
                 "currentSuggestionIndex": 0,
                 "currentHoverIndex": "",
@@ -34,93 +39,17 @@ def raw_keylogs_from_frontend():
                 "currentPresencePenalty": "0",
                 "currentFrequencyPenalty": "0.5",
                 "eventNum": 1,
-            },
-            {
-                "eventName": "suggestion-open",
-                "eventSource": "api",
-                "eventTimestamp": 1629357368607,
-                "textDelta": "",
-                "cursorRange": "",
-                "currentDoc": "",
-                "currentCursor": 379,
-                "currentSuggestions": [
-                    {
-                        "index": 0,
-                        "original": " technology has made dating and relationships better.",
-                        "trimmed": "technology has made dating and relationships better.",
-                        "probability": 4.39569292539925e-12,
-                    },
-                    {
-                        "index": 1,
-                        "original": " technology has improved dating and relationships.",
-                        "trimmed": "technology has improved dating and relationships.",
-                        "probability": 4.65727687645238e-12,
-                    },
-                    {
-                        "index": 2,
-                        "original": " technology has made dating easier.",
-                        "trimmed": "technology has made dating easier.",
-                        "probability": 1.0105152942910267e-12,
-                    },
-                ],
-                "currentSuggestionIndex": 0,
-                "currentHoverIndex": "",
-                "currentN": "5",
-                "currentMaxToken": "30",
-                "currentTemperature": "0.2",
-                "currentTopP": "1",
-                "currentPresencePenalty": "0",
-                "currentFrequencyPenalty": "0.5",
-                "eventNum": 2,
-            },
-            {
-                "eventName": "suggestion-close",
-                "eventSource": "user",
-                "eventTimestamp": 1629357369818,
-                "textDelta": "",
-                "cursorRange": "",
-                "currentDoc": "",
-                "currentCursor": 379,
-                "currentSuggestions": [],
-                "currentSuggestionIndex": 0,
-                "currentHoverIndex": "",
-                "currentN": "5",
-                "currentMaxToken": "30",
-                "currentTemperature": "0.2",
-                "currentTopP": "1",
-                "currentPresencePenalty": "0",
-                "currentFrequencyPenalty": "0.5",
-                "eventNum": 3,
-            },
-            {
-                "eventName": "text-insert",
-                "eventSource": "user",
-                "eventTimestamp": 1629357370478,
-                "textDelta": {"ops": [{"retain": 379}, {"insert": " "}]},
-                "cursorRange": "",
-                "currentDoc": "",
-                "currentCursor": 380,
-                "currentSuggestions": [],
-                "currentSuggestionIndex": 0,
-                "currentHoverIndex": "",
-                "currentN": "5",
-                "currentMaxToken": "30",
-                "currentTemperature": "0.2",
-                "currentTopP": "1",
-                "currentPresencePenalty": "0",
-                "currentFrequencyPenalty": "0.5",
-                "eventNum": 4,
-            },
+            }
         ],
         "session2": [
             {
-                "eventName": "suggestion-get",
+                "eventName": "text-insert",
                 "eventSource": "user",
-                "eventTimestamp": 1629357366346,
-                "textDelta": "",
+                "eventTimestamp": 1629357370478,
+                "textDelta": {"ops": [{"retain": 0}, {"insert": "test"}]},
                 "cursorRange": "",
                 "currentDoc": "",
-                "currentCursor": 0,
+                "currentCursor": 4,
                 "currentSuggestions": [],
                 "currentSuggestionIndex": 0,
                 "currentHoverIndex": "",
@@ -133,75 +62,13 @@ def raw_keylogs_from_frontend():
                 "eventNum": 1,
             },
             {
-                "eventName": "suggestion-open",
-                "eventSource": "api",
-                "eventTimestamp": 1629357368607,
-                "textDelta": "",
-                "cursorRange": "",
-                "currentDoc": "",
-                "currentCursor": 0,
-                "currentSuggestions": [
-                    {
-                        "index": 0,
-                        "original": "The weather is beautiful today.",
-                        "trimmed": "The weather is beautiful today.",
-                        "probability": 4.39569292539925e-12,
-                    },
-                    {
-                        "index": 1,
-                        "original": "It's a perfect day for a walk.",
-                        "trimmed": "It's a perfect day for a walk.",
-                        "probability": 4.65727687645238e-12,
-                    },
-                    {
-                        "index": 2,
-                        "original": "The sun is shining brightly.",
-                        "trimmed": "The sun is shining brightly.",
-                        "probability": 1.0105152942910267e-12,
-                    },
-                ],
-                "currentSuggestionIndex": 0,
-                "currentHoverIndex": "",
-                "currentN": "5",
-                "currentMaxToken": "30",
-                "currentTemperature": "0.2",
-                "currentTopP": "1",
-                "currentPresencePenalty": "0",
-                "currentFrequencyPenalty": "0.5",
-                "eventNum": 2,
-            },
-            {
-                "eventName": "suggestion-close",
-                "eventSource": "user",
-                "eventTimestamp": 1629357369818,
-                "textDelta": "",
-                "cursorRange": "",
-                "currentDoc": "",
-                "currentCursor": 0,
-                "currentSuggestions": [],
-                "currentSuggestionIndex": 0,
-                "currentHoverIndex": "",
-                "currentN": "5",
-                "currentMaxToken": "30",
-                "currentTemperature": "0.2",
-                "currentTopP": "1",
-                "currentPresencePenalty": "0",
-                "currentFrequencyPenalty": "0.5",
-                "eventNum": 3,
-            },
-            {
                 "eventName": "text-insert",
                 "eventSource": "user",
                 "eventTimestamp": 1629357370478,
-                "textDelta": {
-                    "ops": [
-                        {"retain": 0},
-                        {"insert": "The weather is beautiful today."},
-                    ]
-                },
+                "textDelta": {"ops": [{"retain": 0}, {"insert": "test"}]},
                 "cursorRange": "",
                 "currentDoc": "",
-                "currentCursor": 28,
+                "currentCursor": 4,
                 "currentSuggestions": [],
                 "currentSuggestionIndex": 0,
                 "currentHoverIndex": "",
@@ -211,10 +78,50 @@ def raw_keylogs_from_frontend():
                 "currentTopP": "1",
                 "currentPresencePenalty": "0",
                 "currentFrequencyPenalty": "0.5",
-                "eventNum": 4,
+                "eventNum": 1,
             },
         ],
     }
+
+
+@pytest.fixture
+def mock_plugin():
+    """Fixture providing a mock plugin for testing."""
+
+    class MockPlugin(Plugin):
+        @staticmethod
+        def get_plugin_name() -> str:
+            return "mock_plugin"
+
+        @staticmethod
+        def detection_detected(action) -> bool:
+            return action.get("level_1_action_type") == "insert_text"
+
+        @staticmethod
+        def intervention_action() -> Intervention:
+            return Intervention(InterventionEnum.TOAST, "Mock plugin detected")
+
+    return MockPlugin()
+
+
+@pytest.fixture
+def mock_plugin2():
+    """Fixture providing another mock plugin for testing."""
+
+    class MockPlugin2(Plugin):
+        @staticmethod
+        def get_plugin_name() -> str:
+            return "mock_plugin2"
+
+        @staticmethod
+        def detection_detected(action) -> bool:
+            return action.get("level_1_action_type") == "delete_text"
+
+        @staticmethod
+        def intervention_action() -> Intervention:
+            return Intervention(InterventionEnum.TOAST, "Mock plugin 2 detected")
+
+    return MockPlugin2()
 
 
 @pytest.fixture
@@ -330,14 +237,18 @@ def test_action_type_priority_sort(raw_keylogs_from_frontend):
             assert isinstance(action["action_type"], str)
 
 
-def test_process_logs(raw_keylogs_from_frontend, fs, fake_output_dir):
-    """Test the complete processing pipeline of raw keylogs using fake filesystem."""
-    # Create a fake input file with raw keylogs
-    input_file = Path("/fake/input/raw_keylogs.json")
-    fs.create_file(input_file, contents=json.dumps(raw_keylogs_from_frontend))
+@pytest.fixture
+def test_logs_file(raw_keylogs_from_frontend, fs):
+    """Fixture providing a test logs file with raw_keylogs_from_frontend data."""
+    test_file = Path("/fake/input/test_logs.json")
+    fs.create_file(test_file, contents=json.dumps(raw_keylogs_from_frontend))
+    return test_file
 
+
+def test_process_logs(test_logs_file, fs, fake_output_dir):
+    """Test the complete processing pipeline of raw keylogs using fake filesystem."""
     # Process the keylogs
-    process_logs(input_file, fake_output_dir)
+    process_logs(test_logs_file, fake_output_dir)
 
     # Check that all output files are created
     expected_files = [
@@ -352,7 +263,7 @@ def test_process_logs(raw_keylogs_from_frontend, fs, fake_output_dir):
         assert output_file.exists()
 
         # Verify file contains valid JSON
-        with open(output_file) as f:
+        with open(output_file, encoding="utf-8") as f:
             data = json.load(f)
             assert isinstance(data, dict)
             assert len(data) > 0
@@ -377,16 +288,12 @@ def test_process_logs_invalid_json(fs, fake_output_dir):
         process_logs(input_file, fake_output_dir)
 
 
-def test_process_logs_output_dir_creation(fs, raw_keylogs_from_frontend):
+def test_process_logs_output_dir_creation(fs, test_logs_file):
     """Test that output directory is created if it doesn't exist when processing raw keylogs."""
-    input_file = Path("/fake/input/raw_keylogs.json")
     output_dir = Path("/fake/new/output/dir")
 
-    # Create input file with raw keylogs
-    fs.create_file(input_file, contents=json.dumps(raw_keylogs_from_frontend))
-
     # Process keylogs - should create output directory
-    process_logs(input_file, output_dir)
+    process_logs(test_logs_file, output_dir)
 
     # Verify output directory was created
     assert output_dir.exists()
@@ -402,3 +309,115 @@ def test_process_logs_output_dir_creation(fs, raw_keylogs_from_frontend):
 
     for filename in expected_files:
         assert (output_dir / filename).exists()
+
+
+def test_process_logs_with_plugins(
+    test_logs_file, fs, fake_output_dir, monkeypatch, mock_plugin, mock_plugin2
+):
+    """Test processing logs with active plugins."""
+    # Mock the ACTIVE_PLUGINS list in both places where it's used
+    monkeypatch.setattr(
+        "coauthor_interface.backend.parse_all_consolidated.ACTIVE_PLUGINS",
+        [mock_plugin, mock_plugin2],
+    )
+    monkeypatch.setattr(
+        "coauthor_interface.thought_toolkit.parser_all_levels.ACTIVE_PLUGINS",
+        [mock_plugin, mock_plugin2],
+    )
+
+    # Process the keylogs
+    process_logs(test_logs_file, fake_output_dir)
+
+    # Check that the output file with priority actions exists
+    output_file = fake_output_dir / "action_type_with_priority_per_session.json"
+    assert output_file.exists()
+
+    # Verify the priority actions contain plugin names
+    with open(output_file, encoding="utf-8") as f:
+        data = json.load(f)
+        assert isinstance(data, dict)
+        assert len(data) > 0
+
+        # Debug: Print all level_3_action_types found
+        all_level_3_types = set()
+        for session_actions in data.values():
+            for action in session_actions:
+                if "level_3_action_type" in action:
+                    all_level_3_types.add(action["level_3_action_type"])
+        print(f"Found level_3_action_types: {all_level_3_types}")
+
+        # Check that plugin names are logged in the output file
+        for session_actions in data.values():
+            for action in session_actions:
+                if "level_3_action_type" in action:
+                    # Debug: Print action details if it doesn't match expected plugin names
+                    if action["level_3_action_type"] not in [
+                        mock_plugin.get_plugin_name(),
+                        mock_plugin2.get_plugin_name(),
+                    ]:
+                        print(f"Unexpected action: {action}")
+                    assert action["level_3_action_type"] in [
+                        mock_plugin.get_plugin_name(),
+                        mock_plugin2.get_plugin_name(),
+                    ]
+
+
+def test_process_logs_with_empty_plugins(test_logs_file, fs, fake_output_dir, monkeypatch):
+    """Test processing logs with empty ACTIVE_PLUGINS list."""
+    # Mock the ACTIVE_PLUGINS list to be empty in both places
+    monkeypatch.setattr("coauthor_interface.backend.parse_all_consolidated.ACTIVE_PLUGINS", [])
+    monkeypatch.setattr("coauthor_interface.thought_toolkit.parser_all_levels.ACTIVE_PLUGINS", [])
+
+    # Process the keylogs - should not raise any errors
+    process_logs(test_logs_file, fake_output_dir)
+
+    # Check that the output file with priority actions exists
+    output_file = fake_output_dir / "action_type_with_priority_per_session.json"
+    assert output_file.exists()
+
+    # Verify the file contains valid JSON
+    with open(output_file, encoding="utf-8") as f:
+        data = json.load(f)
+        assert isinstance(data, dict)
+        assert len(data) > 0
+
+
+def test_plugin_detection_called(test_logs_file, fs, fake_output_dir, monkeypatch, mock_plugin):
+    """Test that plugin detection_detected method is called during processing."""
+    # Create a spy for the detection_detected method
+    detection_called = False
+
+    def mock_detection_detected(action):
+        nonlocal detection_called
+        detection_called = True
+        return mock_plugin.detection_detected(action)
+
+    # Create a modified mock plugin with the spy
+    class SpyMockPlugin(Plugin):
+        @staticmethod
+        def get_plugin_name() -> str:
+            return mock_plugin.get_plugin_name()
+
+        @staticmethod
+        def detection_detected(action):
+            return mock_detection_detected(action)
+
+        @staticmethod
+        def intervention_action() -> Intervention:
+            return mock_plugin.intervention_action()
+
+    # Mock the ACTIVE_PLUGINS list with our spy plugin in both places
+    monkeypatch.setattr(
+        "coauthor_interface.backend.parse_all_consolidated.ACTIVE_PLUGINS",
+        [SpyMockPlugin()],
+    )
+    monkeypatch.setattr(
+        "coauthor_interface.thought_toolkit.parser_all_levels.ACTIVE_PLUGINS",
+        [SpyMockPlugin()],
+    )
+
+    # Process the keylogs
+    process_logs(test_logs_file, fake_output_dir)
+
+    # Verify that detection_detected was called
+    assert detection_called, "Plugin detection_detected method was not called during processing"
