@@ -100,7 +100,6 @@ def process_logs(input_file: Path, output_dir: Path) -> None:
 
     # Generate priority-based actions
     custom_priority_list = [plugin.get_plugin_name() for plugin in ACTIVE_PLUGINS]
-
     priority_actions = action_type_priority_sort(custom_priority_list, level_3_actions)
 
     # Save all results
@@ -124,7 +123,7 @@ def process_logs(input_file: Path, output_dir: Path) -> None:
 # 4. 'action_type_with_priority_per_session.json' - Applies priority-based sorting to action types for refined analysis.
 if __name__ == "__main__":
     # Example usage
-    script_dir = Path(__file__).parent
+    script_dir = Path(__file__).parent.parent.parent.parent / "tests"
     input_file = script_dir / "small_logs_for_test.json"
     output_dir = script_dir / "output"
     process_logs(input_file, output_dir)
