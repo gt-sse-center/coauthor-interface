@@ -1,5 +1,3 @@
-console.log('Loading editor.js');
-
 var checkFormatLockTime = new Date();  // for template
 
 /* Setup */
@@ -140,14 +138,6 @@ function trackParsingTrigger() {
       eventName = null;
       eventSource = sourceToEventSource(source);
 
-      console.log('Selection change:', {
-        range: range,
-        oldRange: oldRange,
-        source: source,
-        currentIndex: range.index,
-        lastIndex: lastCursorIndex
-      });
-
       // Check if cursor moved backwards
       if (range.length <= 0 && range.index < lastCursorIndex) {
         console.log('Triggering parse_logs - cursor moved backwards');
@@ -164,8 +154,6 @@ function trackParsingTrigger() {
 }
 
 function setupEditorHumanOnly() {
-  console.log('Setting up editor in human-only mode');
-
   quill = new Quill('#editor-container', {
     theme: 'snow',
     placeholder: 'Write something...',
@@ -189,11 +177,9 @@ function setupEditorHumanOnly() {
     }
   });
 
-  console.log('Setting up event handlers');
   trackTextChanges();
   trackSelectionChange();
   trackParsingTrigger();
-  console.log('Event handlers setup complete');
 
   quill.focus();
 }
@@ -312,17 +298,14 @@ function getCursorIndex() {
 
   if (range) {
     if (range.length == 0) {
-      console.log('Updating prevCursorIndex:', { old: prevCursorIndex, new: range.index });
       prevCursorIndex = range.index;
       return { current: range.index, previous: currentIndex };
     } else {
       // For selection, return index of beginning of selection
-      console.log('Updating prevCursorIndex for selection:', { old: prevCursorIndex, new: range.index });
       prevCursorIndex = range.index;
       return { current: range.index, previous: currentIndex }; // Selection
     }
   } else {
-    console.log('No range, using prevCursorIndex:', prevCursorIndex);
     return { current: prevCursorIndex, previous: currentIndex }; // Not in editor
   }
 }
