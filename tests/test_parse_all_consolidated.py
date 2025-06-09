@@ -17,12 +17,6 @@ from coauthor_interface.backend.PluginInterface import (
 
 
 @pytest.fixture
-def test_logs_file():
-    """Fixture providing a test logs file."""
-    return Path(__file__).parent / "small_logs_for_test.json"
-
-
-@pytest.fixture
 def raw_keylogs_from_frontend():
     """Fixture providing test keylogs data."""
     return {
@@ -243,16 +237,18 @@ def test_action_type_priority_sort(raw_keylogs_from_frontend):
             assert isinstance(action["action_type"], str)
 
 
+@pytest.fixture
+def test_logs_file(raw_keylogs_from_frontend, fs):
+    """Fixture providing a test logs file with raw_keylogs_from_frontend data."""
+    test_file = Path("/fake/input/test_logs.json")
+    fs.create_file(test_file, contents=json.dumps(raw_keylogs_from_frontend))
+    return test_file
+
+
 def test_process_logs(test_logs_file, fs, fake_output_dir):
     """Test the complete processing pipeline of raw keylogs using fake filesystem."""
-    # Create a fake input file with raw keylogs
-    # input_file = Path("/fake/input/raw_keylogs.json")
-    fs.add_real_file(test_logs_file)
-    input_file = test_logs_file
-    # fs.create_file(input_file, contents=json.dumps(test_logs_file))
-
     # Process the keylogs
-    process_logs(input_file, fake_output_dir)
+    process_logs(test_logs_file, fake_output_dir)
 
     # Check that all output files are created
     expected_files = [
@@ -296,12 +292,8 @@ def test_process_logs_output_dir_creation(fs, test_logs_file):
     """Test that output directory is created if it doesn't exist when processing raw keylogs."""
     output_dir = Path("/fake/new/output/dir")
 
-    # Create input file with raw keylogs
-    fs.add_real_file(test_logs_file)
-    input_file = test_logs_file
-
     # Process keylogs - should create output directory
-    process_logs(input_file, output_dir)
+    process_logs(test_logs_file, output_dir)
 
     # Verify output directory was created
     assert output_dir.exists()
@@ -333,11 +325,8 @@ def test_process_logs_with_plugins(
         [mock_plugin, mock_plugin2],
     )
 
-    fs.add_real_file(test_logs_file)
-    input_file = test_logs_file
-
     # Process the keylogs
-    process_logs(input_file, fake_output_dir)
+    process_logs(test_logs_file, fake_output_dir)
 
     # Check that the output file with priority actions exists
     output_file = fake_output_dir / "action_type_with_priority_per_session.json"
@@ -379,12 +368,8 @@ def test_process_logs_with_empty_plugins(test_logs_file, fs, fake_output_dir, mo
     monkeypatch.setattr("coauthor_interface.backend.parse_all_consolidated.ACTIVE_PLUGINS", [])
     monkeypatch.setattr("coauthor_interface.thought_toolkit.parser_all_levels.ACTIVE_PLUGINS", [])
 
-    # Create input file with raw keylogs
-    fs.add_real_file(test_logs_file)
-    input_file = test_logs_file
-
     # Process the keylogs - should not raise any errors
-    process_logs(input_file, fake_output_dir)
+    process_logs(test_logs_file, fake_output_dir)
 
     # Check that the output file with priority actions exists
     output_file = fake_output_dir / "action_type_with_priority_per_session.json"
@@ -399,10 +384,6 @@ def test_process_logs_with_empty_plugins(test_logs_file, fs, fake_output_dir, mo
 
 def test_plugin_detection_called(test_logs_file, fs, fake_output_dir, monkeypatch, mock_plugin):
     """Test that plugin detection_detected method is called during processing."""
-    # Create input file with raw keylogs
-    fs.add_real_file(test_logs_file)
-    input_file = test_logs_file
-
     # Create a spy for the detection_detected method
     detection_called = False
 
@@ -436,7 +417,7 @@ def test_plugin_detection_called(test_logs_file, fs, fake_output_dir, monkeypatc
     )
 
     # Process the keylogs
-    process_logs(input_file, fake_output_dir)
+    process_logs(test_logs_file, fake_output_dir)
 
     # Verify that detection_detected was called
     assert detection_called, "Plugin detection_detected method was not called during processing"
