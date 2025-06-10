@@ -116,6 +116,7 @@ def start_session():
         "intervention": "alert_writer",
     }
     SESSIONS[session_id].update(config.convert_to_dict())
+    SESSIONS[session_id]["researcher_notes"] = ""
 
     result["status"] = SUCCESS
 
