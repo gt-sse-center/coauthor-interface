@@ -436,13 +436,13 @@ def parse_logs():
             new_actions, ACTIVE_PLUGINS, n_actions=1, pattern_count_threshold=1
         )
 
-        if SESSIONS[session_id]["intervention"] == "alert_writer" and len(detected) > 0:
+        if SESSIONS[session_id]["intervention"] == "alert_writer" and len(detected_plugins) > 0:
             return jsonify(
                 {
                     "status": SUCCESS,
                     "alert_author": True,
-                    "intervention_type": detected[0].intervention_action().intervention_type,
-                    "message": true_plugins[0].intervention_action().intervention_message,
+                    "intervention_type": detected_plugins[0].intervention_action().intervention_type,
+                    "message": detected_plugins[0].intervention_action().intervention_message,
                 }
             )
         else:
