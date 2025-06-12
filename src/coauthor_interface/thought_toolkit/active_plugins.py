@@ -1,9 +1,9 @@
 from coauthor_interface.thought_toolkit.level_3_plugins import (
-    MajorInsertMindlessEchoPlugin,
-    MinorInsertMindlessEditPlugin,
+    AnyInsert,
 )
 
 ACTIVE_PLUGINS = [
-    MajorInsertMindlessEchoPlugin(),
-    MinorInsertMindlessEditPlugin(),
+    AnyInsert(),
+    # MajorInsertMindlessEchoPlugin(),
+    # MinorInsertMindlessEditPlugin(),
 ]

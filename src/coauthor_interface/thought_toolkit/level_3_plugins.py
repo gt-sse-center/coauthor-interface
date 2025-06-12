@@ -74,3 +74,20 @@ class MinorInsertMindlessEditPlugin(Plugin):
             intervention_type=InterventionEnum.TOAST,
             intervention_message="Detected a minor insert mindless edit",
         )
+
+
+class AnyInsert(Plugin):
+    @staticmethod
+    def get_plugin_name() -> str:
+        return "any_insert"
+
+    @staticmethod
+    def detection_detected(action) -> bool:
+        return action.get("level_1_action_type") == "insert_text"
+
+    @staticmethod
+    def intervention_action() -> Intervention:
+        return Intervention(
+            intervention_type=InterventionEnum.TOAST,
+            intervention_message="Detected an insert text",
+        )
