@@ -420,7 +420,25 @@ function parse_logs() {
         alert(data.message);
       }
       if (data.alert_author) {
-        alert("Echoing of AI's suggestions is detected...")
+        if (data.intervention_type == "toast") {
+          // Clone the toast template
+          const toastTemplate = document.getElementById('toast-template');
+          const toastElement = toastTemplate.content.cloneNode(true);
+
+          // Set the message
+          toastElement.querySelector('.toast-body').textContent = data.message;
+
+          // Add to container and show
+          $('.toast-container').append(toastElement);
+          $('.toast').last().toast('show');
+
+          // Remove after hidden
+          $('.toast').last().on('hidden.bs.toast', function () {
+            $(this).remove();
+          });
+        } else if (data.intervention_type == "alert") {
+          alert(data.message)
+        }
       }
     },
     error: function (xhr, status, error) {
