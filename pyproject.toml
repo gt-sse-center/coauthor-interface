@@ -53,6 +53,7 @@ addopts = "--verbose -vv --capture=no --cov=coauthor_interface --cov-fail-under=
 
 [dependency-groups]
 dev = [
+    "debugpy>=1.8.14",
     "pre-commit>=4.2.0",
     "pyfakefs>=5.8.0",
     "pytest>=8.3.5",

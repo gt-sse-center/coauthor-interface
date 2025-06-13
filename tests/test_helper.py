@@ -3,6 +3,7 @@ import os
 import time
 from pathlib import Path
 from unittest.mock import patch
+import pytest
 
 from coauthor_interface.backend.helper import (
     append_session_to_file,
@@ -15,6 +16,12 @@ from coauthor_interface.backend.helper import (
     retrieve_log_paths,
     save_log_to_json,
     save_log_to_jsonl,
+    check_for_level_3_actions,
+)
+from coauthor_interface.thought_toolkit.PluginInterface import (
+    Plugin,
+    Intervention,
+    InterventionEnum,
 )
 
 
@@ -144,3 +151,90 @@ def test_get_config_for_log(fs):
     ):
         config = get_config_for_log(session_id, {}, metadata_path)
         assert config["config"] == "abc"
+
+
+@pytest.fixture
+def mock_plugin_1():
+    class MockPlugin1(Plugin):
+        def __init__(self):
+            pass
+
+        @staticmethod
+        def get_plugin_name() -> str:
+            return "mock_plugin_1"
+
+        @staticmethod
+        def detection_detected(action) -> bool:
+            return action.get("level_3_action_type") == "insert_text"
+
+        @staticmethod
+        def intervention_action() -> Intervention:
+            return Intervention(InterventionEnum.TOAST, "Mock plugin intervention")
+
+    return MockPlugin1
+
+
+@pytest.fixture
+def mock_plugin_2():
+    class MockPlugin2(Plugin):
+        def __init__(self):
+            pass
+
+        @staticmethod
+        def get_plugin_name() -> str:
+            return "mock_plugin_2"
+
+        @staticmethod
+        def detection_detected(action) -> bool:
+            return action.get("level_3_action_type") == "delete_text"
+
+        @staticmethod
+        def intervention_action() -> Intervention:
+            return Intervention(InterventionEnum.TOAST, "Mock plugin 2 intervention")
+
+    return MockPlugin2
+
+
+@pytest.fixture
+def mock_plugins(mock_plugin_1, mock_plugin_2):
+    plugin1 = mock_plugin_1()
+    plugin2 = mock_plugin_2()
+
+    return [plugin1, plugin2]
+
+
+def test_check_for_level_3_actions_when_n_actions_exceeds_list_length(mock_plugins):
+    # Test case where n_actions (5) is longer than action_lst (2 items)
+    actions = [
+        {"level_3_action_type": "mock_plugin_1"},
+        {"level_3_action_type": "mock_plugin_2"},
+    ]
+    result = check_for_level_3_actions(actions, mock_plugins, n_actions=5, pattern_count_threshold=2)
+    assert result == []
+
+
+def test_check_for_level_3_actions_when_multiple_plugins_meet_threshold(mock_plugins):
+    # Test case with multiple plugins meeting threshold
+    actions = [
+        {"level_3_action_type": "mock_plugin_1"},
+        {"level_3_action_type": "mock_plugin_1"},
+        {"level_3_action_type": "mock_plugin_2"},
+        {"level_3_action_type": "mock_plugin_1"},
+        {"level_3_action_type": "random_action"},
+        {"level_3_action_type": "mock_plugin_1"},
+    ]
+    result = check_for_level_3_actions(actions, mock_plugins, n_actions=6, pattern_count_threshold=3)
+
+    assert len(result) == 1  # Only plugin 1 meets threshold
+    assert {p.get_plugin_name() for p in result} == {"mock_plugin_1"}
+
+
+def test_check_for_level_3_actions_when_no_plugins_meet_threshold(mock_plugins):
+    # Test case where no plugins meet threshold
+    actions = [
+        {"level_3_action_type": "other_action"},
+        {"level_3_action_type": "other_action"},
+        {"level_3_action_type": "other_action"},
+    ]
+    result = check_for_level_3_actions(actions, mock_plugins, n_actions=3, pattern_count_threshold=2)
+    assert len(result) == 0

@@ -286,6 +286,9 @@ def check_for_mindless_editing(actions_lst, n_actions=5, patter_count_threshold=
 
 
 def check_for_level_3_actions(action_lst, plugin_lst, n_actions=5, pattern_count_threshold=3):
+    if n_actions > len(action_lst):
+        return []
+
     counter = defaultdict(int)
 
     for action in action_lst[:n_actions]:
