@@ -117,6 +117,7 @@ def start_session():
         "intervention": "alert_writer",
     }
     SESSIONS[session_id].update(config.convert_to_dict())
+    SESSIONS[session_id]["active_plugins"] = str([plugin.get_plugin_name() for plugin in ACTIVE_PLUGINS])
     SESSIONS[session_id]["researcher_notes"] = ""
 
     result["status"] = SUCCESS
