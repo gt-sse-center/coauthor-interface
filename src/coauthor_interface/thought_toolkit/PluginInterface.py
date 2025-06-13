@@ -8,6 +8,7 @@ class InterventionEnum(str, Enum):
     # NOTE: this will be updated with new intervention types later. For now, this will only support toasts
     TOAST = "toast"
     NONE = "none"
+    ALERT = "alert"
 
 
 @dataclass
