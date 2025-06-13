@@ -14,6 +14,7 @@ from openai import OpenAI
 from flask import Flask, jsonify, request
 from flask_cors import CORS, cross_origin
 
+from coauthor_interface.thought_toolkit.active_plugins import ACTIVE_PLUGINS
 from coauthor_interface.backend.helper import (
     append_session_to_file,
     compute_stats,
@@ -25,8 +26,8 @@ from coauthor_interface.backend.helper import (
     print_verbose,
     retrieve_log_paths,
     save_log_to_jsonl,
-    check_for_mindless_echoing,
     check_for_mindless_editing,
+    check_for_level_3_actions,
 )
 from coauthor_interface.backend.parsing import (
     filter_suggestions,
@@ -430,9 +431,20 @@ def parse_logs():
 
         parsed_actions += new_actions[:-1]  # update the parsed actions parameter
 
-        # Check for `major_insert_mindless_echo` pattern and
-        if SESSIONS[session_id]["intervention"] == "alert_writer" and check_for_mindless_echoing(new_actions):
-            return jsonify({"status": SUCCESS, "alert_author": True})
+        # check for level 3 actions
+        detected_plugins = check_for_level_3_actions(
+            new_actions, ACTIVE_PLUGINS, n_actions=1, pattern_count_threshold=1
+        )
+
+        if SESSIONS[session_id]["intervention"] == "alert_writer" and len(detected_plugins) > 0:
+            return jsonify(
+                {
+                    "status": SUCCESS,
+                    "alert_author": True,
+                    "intervention_type": detected_plugins[0].intervention_action().intervention_type,
+                    "message": detected_plugins[0].intervention_action().intervention_message,
+                }
+            )
         else:
             return jsonify({"status": SUCCESS, "alert_author": False})
     except Exception as e:
