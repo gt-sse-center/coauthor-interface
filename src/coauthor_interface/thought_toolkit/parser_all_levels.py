@@ -280,12 +280,6 @@ class SameSentenceMergeAnalyzer(ActionsParserAnalyzer):
                         sentences_seen_so_far,
                     )
 
-                    current_action = None
-                    current_logs = []
-                    action_start_time = None
-                    action_start_log_id = None
-                    action_start_writing = current_writing
-
                 # Handle suggestion-related operations
                 action_dct, current_writing, current_mask = self.handle_suggestion_operations(
                     log_action,
@@ -299,6 +293,35 @@ class SameSentenceMergeAnalyzer(ActionsParserAnalyzer):
                 )
                 all_actions.append(action_dct)
                 last_special_action = log_action
+
+                # update based on act_dict
+                current_action = action_dct["action_type"]
+                current_logs = action_dct["action_logs"]
+                current_source = action_dct["action_source"]
+                action_start_log_id = action_dct["action_start_log_id"]
+                action_start_time = action_dct["action_start_time"]
+                action_start_writing = current_writing
+
+                # Prepare the last_action dictionary for future calls
+                last_action = self.prepare_last_action(
+                    current_action,
+                    current_source,
+                    current_logs,
+                    action_start_log_id,
+                    action_start_time,
+                    action_start_writing,
+                    current_writing,
+                    current_mask,
+                    sentences_seen_so_far,
+                )
+
+                # clean up - current action has been saved and appended to all_actions
+                current_action = None
+                current_logs = []
+                action_start_time = None
+                action_start_log_id = None
+                action_start_writing = current_writing
+
                 continue
 
             # Handle cursor operations
@@ -405,18 +428,18 @@ class SameSentenceMergeAnalyzer(ActionsParserAnalyzer):
                 sentences_seen_so_far,
             )
 
-        # Prepare the last_action dictionary for future calls
-        last_action = self.prepare_last_action(
-            current_action,
-            current_source,
-            current_logs,
-            action_start_log_id,
-            action_start_time,
-            action_start_writing,
-            current_writing,
-            current_mask,
-            sentences_seen_so_far,
-        )
+            # Prepare the last_action dictionary for future calls
+            last_action = self.prepare_last_action(
+                current_action,
+                current_source,
+                current_logs,
+                action_start_log_id,
+                action_start_time,
+                action_start_writing,
+                current_writing,
+                current_mask,
+                sentences_seen_so_far,
+            )
 
         return all_actions, last_action
 

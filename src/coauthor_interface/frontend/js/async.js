@@ -313,6 +313,7 @@ function getDataForQuery(doc, exampleText) {
     'example_text': exampleText, // $('#exampleTextarea').val()
 
     'doc': doc,
+    'logs': logs,
 
     'n': $("#ctrl-n").val(),
     'max_tokens': $("#ctrl-max_tokens").val(),
