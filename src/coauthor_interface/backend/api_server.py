@@ -174,8 +174,6 @@ def end_session():
 
     # Remove a finished session
     try:
-        # NOTE: Somehow end_session is called twice;
-        # Do not pop session_id from SESSIONS to prevent exception
         session = SESSIONS[session_id]
         results["verification_code"] = session["verification_code"]
         SESSIONS.pop(session_id)
