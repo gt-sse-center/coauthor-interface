@@ -24,18 +24,64 @@ def test_query_dev_mode_returns_empty(client, monkeypatch):
 
     # Prepare session and minimal globals
     session_id = "test-session-2"
-    srv.SESSIONS.clear()  # clear since SESSIONS is a global variable
-    srv.SESSIONS[session_id] = {"last_query_timestamp": 0}
+    srv.SESSIONS.clear()
+    srv.SESSIONS[session_id] = {
+        "last_query_timestamp": 0,
+        "current_action_in_progress": None,
+        "parsed_actions": [],
+        "intervention_on": False,
+    }
     srv.examples = {0: ""}
     srv.blocklist = []
-    srv.intervention_on = False
-    srv.parsed_actions = []
+
+    logs = [
+        {
+            "eventName": "system-initialize",
+            "eventSource": "api",
+            "eventTimestamp": 1750449480896,
+            "textDelta": "",
+            "cursorRange": "",
+            "currentDoc": "\n",
+            "currentCursor": {},
+            "currentSuggestions": [],
+            "currentSuggestionIndex": 0,
+            "currentHoverIndex": "",
+            "currentN": "",
+            "currentMaxToken": "",
+            "currentTemperature": "",
+            "currentTopP": "",
+            "currentPresencePenalty": "",
+            "currentFrequencyPenalty": "",
+            "originalSuggestions": [],
+        },
+        {
+            "eventName": "suggestion-get",
+            "eventSource": "user",
+            "eventTimestamp": 1750449482589,
+            "textDelta": "",
+            "cursorRange": "",
+            "currentDoc": "",
+            "currentCursor": {},
+            "currentSuggestions": [],
+            "currentSuggestionIndex": 0,
+            "currentHoverIndex": "",
+            "currentN": "5",
+            "currentMaxToken": "50",
+            "currentTemperature": "0.95",
+            "currentTopP": "1",
+            "currentPresencePenalty": "0.5",
+            "currentFrequencyPenalty": "0.5",
+            "originalSuggestions": [],
+        },
+    ]
 
     payload = {
         "session_id": session_id,
+        "domain": "test",
         "example": 0,
+        "example_text": "",
         "doc": "",
-        "suggestions": [],
+        "logs": logs,
         "n": 1,
         "max_tokens": 5,
         "temperature": 0.5,
@@ -43,6 +89,8 @@ def test_query_dev_mode_returns_empty(client, monkeypatch):
         "presence_penalty": 0,
         "frequency_penalty": 0,
         "stop": [],
+        "engine": "gpt-3.5-turbo",
+        "suggestions": [],
     }
     response = client.post("/api/query", json=payload)
     assert response.status_code == 200
@@ -308,9 +356,11 @@ def test_query_invalid_session(client):
     """POST /api/query with an unknown session_id returns failure."""
     payload = {
         "session_id": "no_such_session",
-        "suggestions": [],
+        "domain": "test",
         "example": 0,
+        "example_text": "",
         "doc": "",
+        "logs": [],
         "n": 1,
         "max_tokens": 5,
         "temperature": 0.5,
@@ -318,6 +368,8 @@ def test_query_invalid_session(client):
         "presence_penalty": 0,
         "frequency_penalty": 0,
         "stop": [],
+        "engine": "gpt-3.5-turbo",
+        "suggestions": [],
     }
     response = client.post("/api/query", json=payload)
     assert response.status_code == 200
@@ -360,17 +412,18 @@ def test_query_success(
     srv.DEV_MODE = False
     srv.verbose = False
 
-    # Initialize global variables
-    srv.intervention_on = False
-    srv.parsed_actions = []
-
     # Set the api_keys global variable
     srv.api_keys = {("openai", "default"): "fake-api-key"}
 
     # Arrange mocks
     session_id = "success-session"
     srv.SESSIONS.clear()
-    srv.SESSIONS[session_id] = {"last_query_timestamp": 0}
+    srv.SESSIONS[session_id] = {
+        "last_query_timestamp": 0,
+        "current_action_in_progress": None,
+        "parsed_actions": [],
+        "intervention_on": False,
+    }
     srv.examples = {0: "ex"}
     srv.blocklist = []
 
@@ -391,11 +444,54 @@ def test_query_success(
     # filter_suggestions returns a list of tuples and counts
     mock_filter.return_value = ([(" sug_mod", 0.42, "engine")], {})
 
+    logs = [
+        {
+            "eventName": "system-initialize",
+            "eventSource": "api",
+            "eventTimestamp": 1750449480896,
+            "textDelta": "",
+            "cursorRange": "",
+            "currentDoc": "\n",
+            "currentCursor": {},
+            "currentSuggestions": [],
+            "currentSuggestionIndex": 0,
+            "currentHoverIndex": "",
+            "currentN": "",
+            "currentMaxToken": "",
+            "currentTemperature": "",
+            "currentTopP": "",
+            "currentPresencePenalty": "",
+            "currentFrequencyPenalty": "",
+            "originalSuggestions": [],
+        },
+        {
+            "eventName": "suggestion-get",
+            "eventSource": "user",
+            "eventTimestamp": 1750449482589,
+            "textDelta": "",
+            "cursorRange": "",
+            "currentDoc": "",
+            "currentCursor": {},
+            "currentSuggestions": [],
+            "currentSuggestionIndex": 0,
+            "currentHoverIndex": "",
+            "currentN": "5",
+            "currentMaxToken": "50",
+            "currentTemperature": "0.95",
+            "currentTopP": "1",
+            "currentPresencePenalty": "0.5",
+            "currentFrequencyPenalty": "0.5",
+            "originalSuggestions": [],
+        },
+    ]
+
     payload = {
         "session_id": session_id,
+        "domain": "test",
         "example": 0,
+        "example_text": "ex",
         "doc": "",
-        "suggestions": [],
+        "logs": logs,
         "n": 1,
         "max_tokens": 5,
         "temperature": 0.5,
@@ -404,6 +500,7 @@ def test_query_success(
         "frequency_penalty": 0,
         "stop": [],
         "engine": "engine",
+        "suggestions": [],
     }
     response = client.post("/api/query", json=payload)
     assert response.status_code == 200

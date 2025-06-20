@@ -311,10 +311,8 @@ function getDataForQuery(doc, exampleText) {
     'domain': domain,
     'example': example,
     'example_text': exampleText, // $('#exampleTextarea').val()
-
     'doc': doc,
     'logs': logs,
-
     'n': $("#ctrl-n").val(),
     'max_tokens': $("#ctrl-max_tokens").val(),
     'temperature': $("#ctrl-temperature").val(),
@@ -322,9 +320,7 @@ function getDataForQuery(doc, exampleText) {
     'presence_penalty': $("#ctrl-presence_penalty").val(),
     'frequency_penalty': $("#ctrl-frequency_penalty").val(),
     'stop': stop,
-
     'engine': engine,
-
     'suggestions': getSuggestionState(),
   };
 

@@ -17,6 +17,7 @@ import pytest
 # Fixtures
 # ---------------------------------------------------------------------------
 
+
 # ``utils_module`` reloads ``utils.py``. If spaCy is missing we provide a simple
 # stand in implementation so the similarity helper can still be exercised.
 # The dummy classes mimic the minimal behaviour used by the utility functions.
@@ -25,50 +26,52 @@ def utils_module(monkeypatch):
     # Provide a dummy ``ipdb`` module to satisfy imports in the target modules.
     monkeypatch.setitem(sys.modules, "ipdb", SimpleNamespace(set_trace=lambda: None))
     if importlib.util.find_spec("spacy") is None:
+
         class DummyToken:
             def __init__(self, text, pos_="NOUN", is_stop=False):
                 self.text = text
                 self.pos_ = pos_
                 self.is_stop = is_stop
+
             def __str__(self):
                 return self.text
+
         class DummyDoc:
             def __init__(self, tokens):
                 self.tokens = tokens
+
             def __iter__(self):
                 return iter(self.tokens)
+
             def __len__(self):
                 return len(self.tokens)
+
             def similarity(self, other):
                 set1 = {t.text for t in self.tokens}
                 set2 = {t.text for t in other.tokens}
                 return len(set1 & set2) / len(set1 | set2)
+
         class DummyNLP:
             def __call__(self, text):
                 tokens = [DummyToken(t) for t in text.split()]
                 return DummyDoc(tokens)
+
         monkeypatch.setitem(sys.modules, "spacy", SimpleNamespace(load=lambda _: DummyNLP()))
-    module = importlib.reload(
-        importlib.import_module("coauthor_interface.thought_toolkit.utils")
-    )
+    module = importlib.reload(importlib.import_module("coauthor_interface.thought_toolkit.utils"))
     return module
 
 
 @pytest.fixture()
 def parser_helper_module(utils_module):
     """Reload ``parser_helper`` after the utils fixture has patched spaCy."""
-    module = importlib.reload(
-        importlib.import_module("coauthor_interface.thought_toolkit.parser_helper")
-    )
+    module = importlib.reload(importlib.import_module("coauthor_interface.thought_toolkit.parser_helper"))
     return module
 
 
 @pytest.fixture()
 def helper_module(utils_module):
     """Reload ``helper`` once ``utils`` has been imported."""
-    module = importlib.reload(
-        importlib.import_module("coauthor_interface.thought_toolkit.helper")
-    )
+    module = importlib.reload(importlib.import_module("coauthor_interface.thought_toolkit.helper"))
     return module
 
 
@@ -140,7 +143,7 @@ def test_apply_logs_to_writing_parser_helper(parser_helper_module):
     # applies them sequentially to the initial document and mask.
     logs = [
         {"eventSource": "user", "textDelta": {"ops": [{"retain": 5}, {"insert": " world"}]}},
-        {"eventSource": "user", "textDelta": {"ops": [{"delete": 3}]}}
+        {"eventSource": "user", "textDelta": {"ops": [{"delete": 3}]}},
     ]
 
     writing, mask = parser_helper_module.apply_logs_to_writing("Hello", "AAAAA", logs)
@@ -213,9 +216,7 @@ def test_extract_and_clean_text_modifications_from_action(parser_helper_module):
 
     # Case 2: deletion of three characters after retaining two.  The helper
     # returns DELETE with the text removed.
-    logs = [
-        {"eventSource": "user", "textDelta": {"ops": [{"retain": 2}, {"delete": 3}]}}
-    ]
+    logs = [{"eventSource": "user", "textDelta": {"ops": [{"retain": 2}, {"delete": 3}]}}]
     result = parser_helper_module.extract_and_clean_text_modifications_from_action(
         "Hello",
         logs,
@@ -244,7 +245,7 @@ def test_helper_apply_logs_to_writing(helper_module):
 
     logs = [
         {"eventSource": "user", "textDelta": {"ops": [{"retain": 5}, {"insert": " world"}]}},
-        {"eventSource": "user", "textDelta": {"ops": [{"delete": 3}]}}
+        {"eventSource": "user", "textDelta": {"ops": [{"delete": 3}]}},
     ]
 
     text, mask = helper_module.apply_logs_to_writing("Hello", "AAAAA", logs)

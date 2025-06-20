@@ -192,13 +192,9 @@ def end_session():
 @app.route("/api/query", methods=["POST"])
 @cross_origin(origin="*")
 def query():
-    # global current_action_in_progress, parsed_actions, intervention_on
-
     # Step 1
     content = request.json
-    print("QUERY CONTENT", content)
     session_id = content["session_id"]
-    domain = content["domain"]
     logs = content["logs"]
 
     prev_suggestions = content["suggestions"]
@@ -251,8 +247,8 @@ def query():
     ########################################################
     # Step 2
     actions_analyzer = SameSentenceMergeAnalyzer(
-        last_action=SESSIONS[session_id]["current_action_in_progress"],  # pylint: disable=used-before-assignment
-        raw_logs=logs,  # pylint: disable=used-before-assignment
+        last_action=SESSIONS[session_id]["current_action_in_progress"],
+        raw_logs=logs,
     )
 
     # Step 3
@@ -261,24 +257,14 @@ def query():
     for action in new_actions:
         action["level_1_action_type"] = action["action_type"]
 
-    print("\n\n--------------------------------\n\n")
-    print(
-        "query current action in progress",
-        SESSIONS[session_id]["current_action_in_progress"],
-    )
-    print("\n\n--------------------------------\n\n")
-
-    new_actions = actions_analyzer.actions_lst + [
-        convert_last_action_to_complete_action(actions_analyzer.last_action)
-    ]  # NOTE: originally was last_action but that variable was not defined
+    actions_analyzer.last_action = convert_last_action_to_complete_action(actions_analyzer.last_action)
 
     new_actions = parse_level_3_actions(
         {"current_session": new_actions}, similarity_fcn=get_spacy_similarity
     )["current_session"]
 
-    SESSIONS[session_id]["parsed_actions"] += new_actions[:-1]
-
-    # parsed_actions += new_actions[:-1]  # update the parsed actions parameter
+    if len(new_actions) > 0:
+        SESSIONS[session_id]["parsed_actions"] += new_actions[:-1]  # update the parsed actions parameter
 
     # check for level 3 actions
     detected_plugins = check_for_level_3_actions(
@@ -289,7 +275,7 @@ def query():
 
     # Parse doc
     doc = content["doc"]
-    if SESSIONS[session_id]["intervention_on"] == "modify_query" and len(detected_plugins) > 0:  # pylint: disable=possibly-used-before-assignment
+    if SESSIONS[session_id]["intervention_on"] == "modify_query" and len(detected_plugins) > 0:
         results = parse_modified_prompt(doc, max_tokens, context_window_size)
     else:
         results = parse_prompt(example_text + doc, max_tokens, context_window_size)
@@ -400,9 +386,6 @@ def get_log():
     content = request.json
     session_id = content["sessionId"]
 
-    # NOTE: commenting out for ruff
-    # domain = content["domain"] if "domain" in content else None
-
     # Retrieve the latest list of logs
     log_paths = retrieve_log_paths(args.replay_dir)  # pylint: disable=possibly-used-before-assignment
 
@@ -447,21 +430,16 @@ def parse_logs():
     4. Goes through the list of new actions and if switches the
     intervention_on variable if topic shift is detected
     """
-    # global current_action_in_progress, parsed_actions, intervention_on
-
     # Step 1
     content = request.json
     session_id = content["session_id"]
-    domain = content["domain"]
     logs = content["logs"]
-
-    print("PARSE LOGS CONTENT", content)
 
     try:
         # Step 2
         actions_analyzer = SameSentenceMergeAnalyzer(
-            last_action=SESSIONS[session_id]["current_action_in_progress"],  # pylint: disable=used-before-assignment
-            raw_logs=logs,  # pylint: disable=used-before-assignment
+            last_action=SESSIONS[session_id]["current_action_in_progress"],
+            raw_logs=logs,
         )
 
         # Step 3
@@ -470,12 +448,6 @@ def parse_logs():
         for action in new_actions:
             action["level_1_action_type"] = action["action_type"]
 
-        print("\n\n---------------\n\n")
-        print(
-            "parse logs current action in progress",
-            SESSIONS[session_id]["current_action_in_progress"],
-        )
-        print("\n\n----------------\n\n")
         new_actions = actions_analyzer.actions_lst + [
             convert_last_action_to_complete_action(actions_analyzer.last_action)
         ]  # NOTE: originally was last_action but that variable was not defined
@@ -484,8 +456,7 @@ def parse_logs():
             {"current_session": new_actions}, similarity_fcn=get_spacy_similarity
         )["current_session"]
 
-        SESSIONS[session_id]["parsed_actions"] += new_actions[:-1]
-        # parsed_actions += new_actions[:-1]  # update the parsed actions parameter
+        SESSIONS[session_id]["parsed_actions"] += new_actions[:-1]  # update the parsed actions parameter
 
         # check for level 3 actions
         detected_plugins = check_for_level_3_actions(
@@ -569,17 +540,6 @@ if __name__ == "__main__":
 
     global verbose
     verbose = args.verbose
-
-    #### NEW VARIABLES ####
-    # global parsed_actions
-    # parsed_actions = []
-    # global current_action_in_progress
-    # current_action_in_progress = None
-    # global intervention_on
-    # intervention_on = False
-    #### NEW VARIABLES END ####
-
-    ##### new new variables #####
 
     app.run(
         host="0.0.0.0",
