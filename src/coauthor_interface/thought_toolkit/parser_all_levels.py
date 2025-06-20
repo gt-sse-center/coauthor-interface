@@ -294,28 +294,21 @@ class SameSentenceMergeAnalyzer(ActionsParserAnalyzer):
                 all_actions.append(action_dct)
                 last_special_action = log_action
 
-                # update based on act_dict
-                current_action = action_dct["action_type"]
-                current_logs = action_dct["action_logs"]
-                current_source = action_dct["action_source"]
-                action_start_log_id = action_dct["action_start_log_id"]
-                action_start_time = action_dct["action_start_time"]
-                action_start_writing = current_writing
-
-                # Prepare the last_action dictionary for future calls
+                # Prepare the last_action dictionary for future calls and update based on act_dict
                 last_action = self.prepare_last_action(
-                    current_action,
-                    current_source,
-                    current_logs,
-                    action_start_log_id,
-                    action_start_time,
-                    action_start_writing,
-                    current_writing,
-                    current_mask,
-                    sentences_seen_so_far,
+                    current_action=action_dct["action_type"],
+                    current_source=action_dct["action_source"],
+                    current_logs=action_dct["action_logs"],
+                    action_start_log_id=action_dct["action_start_log_id"],
+                    action_start_time=action_dct["action_start_time"],
+                    action_start_writing=current_writing,
+                    current_writing=current_writing,
+                    current_mask=current_mask,
+                    sentences_seen_so_far=sentences_seen_so_far,
                 )
 
                 # clean up - current action has been saved and appended to all_actions
+                current_source = action_dct["action_source"]
                 current_action = None
                 current_logs = []
                 action_start_time = None
