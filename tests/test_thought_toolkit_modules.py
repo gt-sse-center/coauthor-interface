@@ -251,4 +251,3 @@ def test_helper_apply_logs_to_writing(helper_module):
 
     assert text == "lo world"
     assert mask == "AA______"
-    
