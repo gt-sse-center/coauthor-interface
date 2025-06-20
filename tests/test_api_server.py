@@ -570,3 +570,148 @@ def test_get_log_success(
     assert data["stats"] == fake_stats
     assert data["last_text"] == fake_last
     assert data["config"] == fake_conf
+
+
+@patch("coauthor_interface.backend.api_server.SameSentenceMergeAnalyzer")
+@patch("coauthor_interface.backend.api_server.convert_last_action_to_complete_action")
+@patch("coauthor_interface.backend.api_server.parse_level_3_actions")
+@patch("coauthor_interface.backend.api_server.check_for_level_3_actions")
+def test_parse_logs_show_interventions_false(
+    mock_check_plugins,
+    mock_parse_level_3,
+    mock_convert_action,
+    mock_analyzer_class,
+    client,
+):
+    """POST /api/parse_logs returns alert_author=False when show_interventions=False."""
+    session_id = "test-session"
+
+    # Set up session with show_interventions=False
+    srv.SESSIONS.clear()
+    srv.SESSIONS[session_id] = {
+        "current_action_in_progress": None,
+        "parsed_actions": [],
+        "show_interventions": False,
+    }
+
+    # Mock the analyzer
+    mock_analyzer = MagicMock()
+    mock_analyzer.last_action = None
+    mock_analyzer.actions_lst = []
+    mock_analyzer_class.return_value = mock_analyzer
+
+    # Mock other functions
+    mock_convert_action.return_value = None
+    mock_parse_level_3.return_value = {"current_session": []}
+    mock_check_plugins.return_value = ["some_plugin"]  # Even with plugins, should return False
+
+    payload = {"session_id": session_id, "logs": [{"event": "test"}]}
+
+    response = client.post("/api/parse_logs", json=payload)
+    assert response.status_code == 200
+    data = response.get_json()
+    assert data["status"] is True
+    assert data["alert_author"] is False
+
+
+@patch("coauthor_interface.backend.api_server.SameSentenceMergeAnalyzer")
+@patch("coauthor_interface.backend.api_server.convert_last_action_to_complete_action")
+@patch("coauthor_interface.backend.api_server.parse_level_3_actions")
+@patch("coauthor_interface.backend.api_server.check_for_level_3_actions")
+def test_parse_logs_show_interventions_true_with_plugins(
+    mock_check_plugins,
+    mock_parse_level_3,
+    mock_convert_action,
+    mock_analyzer_class,
+    client,
+):
+    """POST /api/parse_logs returns alert_author=True when show_interventions=True and plugins detected."""
+    session_id = "test-session"
+
+    # Set up session with show_interventions=True
+    srv.SESSIONS.clear()
+    srv.SESSIONS[session_id] = {
+        "current_action_in_progress": None,
+        "parsed_actions": [],
+        "show_interventions": True,
+    }
+
+    # Mock the analyzer
+    mock_analyzer = MagicMock()
+    mock_analyzer.last_action = None
+    mock_analyzer.actions_lst = []
+    mock_analyzer_class.return_value = mock_analyzer
+
+    # Mock other functions
+    mock_convert_action.return_value = None
+    mock_parse_level_3.return_value = {"current_session": []}
+
+    # Mock plugin with intervention action
+    mock_plugin = MagicMock()
+    mock_intervention_action = MagicMock()
+    mock_intervention_action.intervention_type = "test_type"
+    mock_intervention_action.intervention_message = "test_message"
+    mock_plugin.intervention_action.return_value = mock_intervention_action
+    mock_check_plugins.return_value = [mock_plugin]
+
+    payload = {"session_id": session_id, "logs": [{"event": "test"}]}
+
+    response = client.post("/api/parse_logs", json=payload)
+    assert response.status_code == 200
+    data = response.get_json()
+    assert data["status"] is True
+    assert data["alert_author"] is True
+    assert data["intervention_type"] == "test_type"
+    assert data["message"] == "test_message"
+
+
+@patch("coauthor_interface.backend.api_server.SameSentenceMergeAnalyzer")
+@patch("coauthor_interface.backend.api_server.convert_last_action_to_complete_action")
+@patch("coauthor_interface.backend.api_server.parse_level_3_actions")
+@patch("coauthor_interface.backend.api_server.check_for_level_3_actions")
+def test_parse_logs_show_interventions_true_no_plugins(
+    mock_check_plugins,
+    mock_parse_level_3,
+    mock_convert_action,
+    mock_analyzer_class,
+    client,
+):
+    """POST /api/parse_logs returns alert_author=False when show_interventions=True but no plugins detected."""
+    session_id = "test-session"
+
+    # Set up session with show_interventions=True
+    srv.SESSIONS.clear()
+    srv.SESSIONS[session_id] = {
+        "current_action_in_progress": None,
+        "parsed_actions": [],
+        "show_interventions": True,
+    }
+
+    # Mock the analyzer
+    mock_analyzer = MagicMock()
+    mock_analyzer.last_action = None
+    mock_analyzer.actions_lst = []
+    mock_analyzer_class.return_value = mock_analyzer
+
+    # Mock other functions
+    mock_convert_action.return_value = None
+    mock_parse_level_3.return_value = {"current_session": []}
+    mock_check_plugins.return_value = []  # No plugins detected
+
+    payload = {"session_id": session_id, "logs": [{"event": "test"}]}
+
+    response = client.post("/api/parse_logs", json=payload)
+    assert response.status_code == 200
+    data = response.get_json()
+    assert data["status"] is True
+    assert data["alert_author"] is False
+
+
+def test_parse_logs_invalid_session(client):
+    """POST /api/parse_logs with unknown session_id returns failure."""
+    payload = {"session_id": "no_such_session", "logs": [{"event": "test"}]}
+    response = client.post("/api/parse_logs", json=payload)
+    assert response.status_code == 200
+    data = response.get_json()
+    assert data["status"] is False
+    assert data["alert_author"] is False
