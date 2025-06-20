@@ -29,7 +29,7 @@ def test_query_dev_mode_returns_empty(client, monkeypatch):
         "last_query_timestamp": 0,
         "current_action_in_progress": None,
         "parsed_actions": [],
-        "intervention_on": False,
+        "show_interventions": True,
     }
     srv.examples = {0: ""}
     srv.blocklist = []
@@ -422,7 +422,7 @@ def test_query_success(
         "last_query_timestamp": 0,
         "current_action_in_progress": None,
         "parsed_actions": [],
-        "intervention_on": False,
+        "show_interventions": True,
     }
     srv.examples = {0: "ex"}
     srv.blocklist = []
