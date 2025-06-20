@@ -435,8 +435,6 @@ def parse_logs():
     session_id = content["session_id"]
     logs = content["logs"]
 
-    print("PARSE LOGS CONTENT", content)
-
     try:
         # Step 2
         actions_analyzer = SameSentenceMergeAnalyzer(
@@ -450,15 +448,7 @@ def parse_logs():
         for action in new_actions:
             action["level_1_action_type"] = action["action_type"]
 
-        print("\n\n---------------\n\n")
-        print(
-            "parse logs current action in progress",
-            SESSIONS[session_id]["current_action_in_progress"],
-        )
-        print("\n\n----------------\n\n")
-        new_actions = actions_analyzer.actions_lst + [
-            convert_last_action_to_complete_action(actions_analyzer.last_action)
-        ]  # NOTE: originally was last_action but that variable was not defined
+        actions_analyzer.last_action = convert_last_action_to_complete_action(actions_analyzer.last_action)
 
         new_actions = parse_level_3_actions(
             {"current_session": new_actions}, similarity_fcn=get_spacy_similarity
