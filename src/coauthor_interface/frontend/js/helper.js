@@ -1,46 +1,46 @@
 // Get arguments from URL
-function getCondition(){
+function getCondition() {
   let urlString = window.location.href;
   let url = new URL(urlString);
   let condition = url.searchParams.get("cond");
 
   // If it is the interactive QA domain, always set it to be "human"
-  if (domain == "interactiveqa"){
+  if (domain == "interactiveqa") {
     condition = "human";
   }
 
   return condition;
 }
 
-function getControl(){
+function getControl() {
   let urlString = window.location.href;
   let url = new URL(urlString);
   let ctrl = url.searchParams.get("ctrl");
   return ctrl;
 }
 
-function getExpertise(){
+function getExpertise() {
   let urlString = window.location.href;
   let url = new URL(urlString);
   let level = url.searchParams.get("level");
   return level;
 }
 
-function getAccessCode(){
+function getAccessCode() {
   let urlString = window.location.href;
   let url = new URL(urlString);
   let accessCode = url.searchParams.get("access_code");
   return accessCode;
 }
 
-function getSessionId(){
+function getSessionId() {
   let urlString = window.location.href;
   let url = new URL(urlString);
   let sessionId = url.searchParams.get("session_id");
   return sessionId;
 }
 
-function getStartEnd(){
+function getStartEnd() {
   let urlString = window.location.href;
   let url = new URL(urlString);
   let start = url.searchParams.get("start");
@@ -57,7 +57,7 @@ function getStartEnd(){
   }
 }
 
-function getMode(){
+function getMode() {
   // For replay, whether it is final or not.
   let urlString = window.location.href;
   let url = new URL(urlString);
@@ -72,7 +72,7 @@ function setCtrl(
   top_p,
   presence_penalty,
   frequency_penalty,
-){
+) {
   $("#ctrl-n").val(n);
   $("#ctrl-max_tokens").val(max_tokens);
   $("#ctrl-temperature").val(temperature);
@@ -81,7 +81,7 @@ function setCtrl(
   $("#ctrl-frequency_penalty").val(frequency_penalty);
 }
 
-function setPrompt(prompt){
+function setPrompt(prompt) {
   setText(prompt);
   setCursorAtTheEnd();
 
@@ -89,22 +89,25 @@ function setPrompt(prompt){
   logEvent(EventName.SYSTEM_INITIALIZE, EventSource.API);
 }
 
-function openShortcuts(){
+function openShortcuts() {
   $('#shortcuts').css('display', 'inline');
 }
 
-function closeShortcuts(){
+function closeShortcuts() {
   $('#shortcuts').css('display', 'none');
 }
 
-function startTimer(timeInSeconds){
+function startTimer(timeInSeconds) {
 
-  if (timeInSeconds === 0){
+  if (timeInSeconds === 0) {
     $('.countdown').html('00:00');
     if (domain == 'metaphor') {
     } else {
-      $('#finish-btn').prop('disabled', false);
-      $('#finish-replay-btn').prop('disabled', false);
+      // Only enable the save button if the session hasn't been ended
+      if (!sessionEnded) {
+        $('#finish-btn').prop('disabled', false);
+        $('#finish-replay-btn').prop('disabled', false);
+      }
     }
 
     return;
@@ -113,7 +116,7 @@ function startTimer(timeInSeconds){
   var seconds = timeInSeconds % 60;
   var timerStr = minutes + ':' + seconds;
 
-  var interval = setInterval(function() {
+  var interval = setInterval(function () {
     var timer = timerStr.split(':');
     var minutes = parseInt(timer[0], 10);
     var seconds = parseInt(timer[1], 10);
@@ -135,12 +138,18 @@ function startTimer(timeInSeconds){
     if ((seconds == 0) && (minutes == 0)) {
       if (domain == 'metaphor') {
         alert('Your time is up! Please click the "Finish session" button on the bottom to save this session.');
-        $('#finish-btn').prop('disabled', false);
-        $('#finish-btn').removeClass('btn-inactive');
-        $('#finish-btn').addClass('btn-active');
+        // Only enable the save button if the session hasn't been ended
+        if (!sessionEnded) {
+          $('#finish-btn').prop('disabled', false);
+          $('#finish-btn').removeClass('btn-inactive');
+          $('#finish-btn').addClass('btn-active');
+        }
       } else {
-        $('#finish-btn').prop('disabled', false);
-        $('#finish-replay-btn').prop('disabled', false);
+        // Only enable the save button if the session hasn't been ended
+        if (!sessionEnded) {
+          $('#finish-btn').prop('disabled', false);
+          $('#finish-replay-btn').prop('disabled', false);
+        }
       }
     }
     if (minutes < 0) clearInterval(interval);
@@ -149,23 +158,23 @@ function startTimer(timeInSeconds){
   }, 1000);
 }
 
-function startBlinking(){
+function startBlinking() {
   $('#robot').addClass('blink');
 
-  if (domain.indexOf('copywriting') >= 0){
+  if (domain.indexOf('copywriting') >= 0) {
     $('#loading-signal').removeClass('do-not-display');
   }
 }
 
-function stopBlinking(){
+function stopBlinking() {
   $('#robot').removeClass('blink');
 
-  if (domain.indexOf('copywriting') >= 0){
+  if (domain.indexOf('copywriting') >= 0) {
     $('#loading-signal').addClass('do-not-display');
   }
 }
 
-function resetCounter(){
+function resetCounter() {
   contentLength = 0;
   $('#counter').html('0');
 
@@ -174,12 +183,12 @@ function resetCounter(){
   $('#counter').removeClass('counter-over');
 }
 
-function updateCounter(){
+function updateCounter() {
   let content = getText();
   let contentLength = -1;
 
   // Prompt is deleted (number of characters)
-  if (content.length < promptLength){
+  if (content.length < promptLength) {
     promptLength = 0;
     alert('Since the given prompt is deleted, we will just show the total number of words in the editor from now on.');
   } else {

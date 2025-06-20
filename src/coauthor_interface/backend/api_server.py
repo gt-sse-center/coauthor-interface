@@ -178,6 +178,7 @@ def end_session():
         # Do not pop session_id from SESSIONS to prevent exception
         session = SESSIONS[session_id]
         results["verification_code"] = session["verification_code"]
+        SESSIONS.pop(session_id)
         print_current_sessions(SESSIONS, f"Session {session_id} has been saved successfully.")
     except Exception as e:
         print(e)

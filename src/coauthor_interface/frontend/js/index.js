@@ -1,4 +1,4 @@
-$(function() {
+$(function () {
   startBlinking();
 
   if (condition == 'human') {
@@ -11,13 +11,16 @@ $(function() {
 
   /* Enable controls */
   ctrl = getControl(); // &ctrl=show
-  if (ctrl == 'show'){
+  if (ctrl == 'show') {
     $('#setting-btn').css('display', 'inline');
-    $('#setting-btn').click(function(e) {
+    $('#setting-btn').click(function (e) {
       $('#control').toggleClass('show');
     });
-    $('#finish-btn').prop('disabled', false);
-    $('#finish-replay-btn').prop('disabled', false);
+    // Only enable the save button if the session hasn't been ended
+    if (!sessionEnded) {
+      $('#finish-btn').prop('disabled', false);
+      $('#finish-replay-btn').prop('disabled', false);
+    }
   }
 
   let accessCode = getAccessCode();
@@ -28,11 +31,11 @@ $(function() {
 
   /* Make shortcuts draggable */
   if ($("#shortcuts").length) {
-    $("#shortcuts").draggable({containment: 'window'});
+    $("#shortcuts").draggable({ containment: 'window' });
   }
 
   /* Manage suggestions in dropdown */
-  $(document).click(function(e) {
+  $(document).click(function (e) {
     // Close dropdown if mouse clicked elsewhere
     // Check if click was triggered on or within frontend-overlay
     if ($(e.target).closest("#frontend-overlay").length > 0) {
@@ -44,11 +47,11 @@ $(function() {
 
   // Navigate dropdown menu using arrow keys
   tab = 9, enter = 13, esc = 27, left = 37, up = 38, right = 39, down = 40;
-  $(document).keydown(function(e) {
+  $(document).keydown(function (e) {
     if ($('#frontend-overlay').hasClass('hidden')) {
       // Reopen dropdown menu
       if (e.shiftKey && e.key === 'Tab') {
-        showDropdownMenu(EventSource.USER, is_reopen=true);
+        showDropdownMenu(EventSource.USER, is_reopen = true);
         e.preventDefault();
       }
       return;
@@ -98,16 +101,16 @@ $(function() {
   });
 
   /* Handle buttons */
-  $('#shortcuts-close-btn').click(function(e) {
+  $('#shortcuts-close-btn').click(function (e) {
     closeShortcuts();
   });
-  $('#shortcuts-open-btn').click(function(e) {
+  $('#shortcuts-open-btn').click(function (e) {
     openShortcuts();
   });
-  $('#finish-btn').click(function(e) {
+  $('#finish-btn').click(function (e) {
     endSession();
   });
-  $('#finish-replay-btn').click(function(e) {
+  $('#finish-replay-btn').click(function (e) {
     endSessionWithReplay();
   });
 });
