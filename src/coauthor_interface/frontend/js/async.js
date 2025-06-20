@@ -1,6 +1,7 @@
 async function startSession(accessCode) {
   session = {};
   logs = [];
+  sessionEnded = false;  // Reset session ended flag for new session
   try {
     session = await wwai.api.startSession(domain, accessCode);
     if (debug) {
@@ -53,6 +54,12 @@ async function endSession() {
 
   $('#verification-code').removeClass('do-not-display');
   $('#verification-code').html('Verification code: ' + verificationCode);
+
+  // Disable the save button after session is ended
+  $('#finish-btn').prop('disabled', true);
+
+  // Mark session as ended to prevent re-enabling the button
+  sessionEnded = true;
 }
 
 async function endSessionWithReplay() {
@@ -68,6 +75,12 @@ async function endSessionWithReplay() {
 
   $('#verification-code').removeClass('do-not-display');
   $('#verification-code').html('<a href="' + replayLink + '" target="_blank">' + replayLink + '</a>');
+
+  // Disable the save button after session is ended
+  $('#finish-btn').prop('disabled', true);
+
+  // Mark session as ended to prevent re-enabling the button
+  sessionEnded = true;
 }
 
 const delay = ms => new Promise(res => setTimeout(res, ms));
@@ -232,6 +245,7 @@ async function showFinalStoryWithSessionId(sessionId) {
 }
 
 async function loadLogsWithSessionId(newSessionId) {
+  sessionEnded = false;  // Reset session ended flag for loaded session
   try {
     results = await wwai.api.getLog(newSessionId);
 

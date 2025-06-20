@@ -13,6 +13,7 @@ var sortSuggestions = true;
 /***************************************************************/
 var session = null;  // Changed when refreshed
 var sessionId = '';  // Changed when refreshed
+var sessionEnded = false;  // Track if session has been ended
 var example = '';
 var exampleActualText = '';
 var stop = new Array();
