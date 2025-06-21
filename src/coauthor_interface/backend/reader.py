@@ -1,16 +1,16 @@
 import csv
 import json
-import os
+from pathlib import Path
 
 from coauthor_interface.backend.access_code import AccessCodeConfig
 
 
 def read_api_keys(config_dir):
     """Read API keys from a CSV file."""
-    path = os.path.join(config_dir, "api_keys.csv")
+    path = Path(config_dir) / "api_keys.csv"
 
     api_keys = dict()
-    if not os.path.exists(path):
+    if not path.exists():
         raise RuntimeError(f"Cannot find API keys in the file: {path}")
 
     with open(path) as f:
@@ -26,11 +26,16 @@ def read_api_keys(config_dir):
 def read_log(log_path):
     """Read a log file."""
     log = []
-    if log_path.endswith(".json"):
-        with open(log_path) as f:
+    path = Path(log_path)
+
+    if not path.exists():
+        raise FileNotFoundError(f"Log file not found: {path}")
+
+    if path.suffix == ".json":
+        with open(path) as f:
             log = json.load(f)
-    elif log_path.endswith(".jsonl"):
-        with open(log_path) as f:
+    elif path.suffix == ".jsonl":
+        with open(path) as f:
             for line in f:
                 log.append(json.loads(line))
     else:
@@ -40,21 +45,21 @@ def read_log(log_path):
 
 def read_examples(config_dir):
     """Read all examples from config_dir."""
-    path = os.path.join(config_dir, "examples")
+    path = Path(config_dir) / "examples"
     examples = {"na": ""}
 
-    if not os.path.exists(path):
+    if not path.exists():
         print(f"# Path does not exist: {path}")
         return examples
 
     paths = []
-    for filename in os.listdir(path):
-        if filename.endswith("txt"):
-            paths.append(os.path.join(path, filename))
+    for file_path in path.iterdir():
+        if file_path.suffix == ".txt":
+            paths.append(file_path)
 
-    for path in paths:
-        name = os.path.basename(path)[:-4]
-        with open(path) as f:
+    for file_path in paths:
+        name = file_path.stem
+        with open(file_path) as f:
             text = f.read().replace("\\n", "\n")
             text = text + " "
         examples[name] = text
@@ -63,7 +68,10 @@ def read_examples(config_dir):
 
 def read_prompts(config_dir):
     """Read all prompts from config_dir."""
-    path = os.path.join(config_dir, "prompts.tsv")
+    path = Path(config_dir) / "prompts.tsv"
+
+    if not path.exists():
+        raise FileNotFoundError(f"Prompts file not found: {path}")
 
     prompts = {"na": ""}
     with open(path) as f:
@@ -84,24 +92,25 @@ def read_access_codes(config_dir):
     Return a dictionary with access codes as keys and configs as values.
     """
     access_codes = dict()
+    config_path = Path(config_dir)
 
     # Retrieve all file names that contain 'access_code'
-    if not os.path.exists(config_dir):
+    if not config_path.exists():
         raise RuntimeError(f"Cannot find access code at {config_dir}")
 
     paths = []
-    for filename in os.listdir(config_dir):
-        if "access_code" in filename and filename.endswith("csv"):
-            paths.append(os.path.join(config_dir, filename))
+    for file_path in config_path.iterdir():
+        if "access_code" in file_path.name and file_path.suffix == ".csv":
+            paths.append(file_path)
 
     # Read access codes with configs
-    for path in paths:
-        with open(path) as f:
+    for file_path in paths:
+        with open(file_path) as f:
             input_file = csv.DictReader(f)
 
             for row in input_file:
                 if "access_code" not in row:
-                    print(f"# Could not find access_code in {path}:\n{row}")
+                    print(f"# Could not find access_code in {file_path}:\n{row}")
                     continue
 
                 access_code = row["access_code"]
@@ -112,7 +121,12 @@ def read_access_codes(config_dir):
 
 def update_metadata(metadata, metadata_path):
     """Update metadata with the most recent history."""
-    with open(metadata_path) as f:
+    path = Path(metadata_path)
+
+    if not path.exists():
+        raise FileNotFoundError(f"Metadata file not found: {path}")
+
+    with open(path) as f:
         lines = f.read().split("\n")
         for line in lines:
             if not line:  # Skip empty line at the end
@@ -127,7 +141,10 @@ def update_metadata(metadata, metadata_path):
 
 def read_blocklist(config_dir):
     """Read blocklist from a text file."""
-    path = os.path.join(config_dir, "blocklist.txt")
+    path = Path(config_dir) / "blocklist.txt"
+
+    if not path.exists():
+        raise FileNotFoundError(f"Blocklist file not found: {path}")
 
     blocklist = set()
     with open(path) as f:
