@@ -49,7 +49,7 @@ build-backend = "hatchling.build"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "--verbose -vv --capture=no --cov=coauthor_interface --cov-fail-under=25.0 --cov-report=html"
+addopts = "--verbose -vv --capture=no --cov=coauthor_interface --cov-fail-under=60.0 --cov-report=html"
 
 [dependency-groups]
 dev = [
