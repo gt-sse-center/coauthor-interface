@@ -26,7 +26,6 @@ from coauthor_interface.backend.helper import (
     print_verbose,
     retrieve_log_paths,
     save_log_to_jsonl,
-    check_for_mindless_editing,
     check_for_level_3_actions,
 )
 from coauthor_interface.backend.parsing import (
@@ -115,6 +114,9 @@ def start_session():
         "last_query_timestamp": time(),
         "verification_code": verification_code,
         "intervention": "alert_writer",
+        "intervention_on": True,
+        "parsed_actions": [],
+        "current_action_in_progress": None,
     }
     SESSIONS[session_id].update(config.convert_to_dict())
     SESSIONS[session_id]["active_plugins"] = str([plugin.get_plugin_name() for plugin in ACTIVE_PLUGINS])
@@ -190,11 +192,10 @@ def end_session():
 @app.route("/api/query", methods=["POST"])
 @cross_origin(origin="*")
 def query():
+    # Step 1
     content = request.json
     session_id = content["session_id"]
-
-    # NOTE: commenting out for ruff
-    # domain = content["domain"]
+    logs = content["logs"]
 
     prev_suggestions = content["suggestions"]
 
@@ -212,13 +213,15 @@ def query():
         )
         return jsonify(results)
 
+    #########################################################
+    # TODO: what is going on here?
     example = content["example"]
-
     example_text = examples[example]  # pylint: disable=possibly-used-before-assignment
 
     # Overwrite example text if it is manually provided
     if "example_text" in content:
         example_text = content["example_text"]
+    #########################################################
 
     # Get configurations
     n = int(content["n"])
@@ -241,9 +244,38 @@ def query():
     if not stop_sequence:
         stop_sequence = None
 
+    ########################################################
+    # Step 2
+    actions_analyzer = SameSentenceMergeAnalyzer(
+        last_action=SESSIONS[session_id]["current_action_in_progress"],
+        raw_logs=logs,
+    )
+
+    # Step 3
+    SESSIONS[session_id]["current_action_in_progress"] = actions_analyzer.last_action
+    new_actions = actions_analyzer.actions_lst
+    for action in new_actions:
+        action["level_1_action_type"] = action["action_type"]
+
+    actions_analyzer.last_action = convert_last_action_to_complete_action(actions_analyzer.last_action)
+
+    new_actions = parse_level_3_actions(
+        {"current_session": new_actions}, similarity_fcn=get_spacy_similarity
+    )["current_session"]
+
+    if len(new_actions) > 0:
+        SESSIONS[session_id]["parsed_actions"] += new_actions[:-1]  # update the parsed actions parameter
+
+    # check for level 3 actions
+    detected_plugins = check_for_level_3_actions(
+        new_actions, ACTIVE_PLUGINS, n_actions=1, pattern_count_threshold=1
+    )
+
+    #########################################################
+
     # Parse doc
     doc = content["doc"]
-    if intervention_on == "modify_query" and check_for_mindless_editing(parsed_actions):  # pylint: disable=possibly-used-before-assignment
+    if SESSIONS[session_id]["intervention_on"] == "modify_query" and len(detected_plugins) > 0:
         results = parse_modified_prompt(doc, max_tokens, context_window_size)
     else:
         results = parse_prompt(example_text + doc, max_tokens, context_window_size)
@@ -354,9 +386,6 @@ def get_log():
     content = request.json
     session_id = content["sessionId"]
 
-    # NOTE: commenting out for ruff
-    # domain = content["domain"] if "domain" in content else None
-
     # Retrieve the latest list of logs
     log_paths = retrieve_log_paths(args.replay_dir)  # pylint: disable=possibly-used-before-assignment
 
@@ -401,36 +430,31 @@ def parse_logs():
     4. Goes through the list of new actions and if switches the
     intervention_on variable if topic shift is detected
     """
-    global current_action_in_progress, parsed_actions, intervention_on
-
     # Step 1
     content = request.json
     session_id = content["session_id"]
-    domain = content["domain"]
     logs = content["logs"]
 
     try:
         # Step 2
         actions_analyzer = SameSentenceMergeAnalyzer(
-            last_action=current_action_in_progress,  # pylint: disable=used-before-assignment
-            raw_logs=logs,  # pylint: disable=used-before-assignment
+            last_action=SESSIONS[session_id]["current_action_in_progress"],
+            raw_logs=logs,
         )
 
         # Step 3
-        current_action_in_progress = actions_analyzer.last_action
+        SESSIONS[session_id]["current_action_in_progress"] = actions_analyzer.last_action
         new_actions = actions_analyzer.actions_lst
         for action in new_actions:
             action["level_1_action_type"] = action["action_type"]
 
-        new_actions = actions_analyzer.actions_lst + [
-            convert_last_action_to_complete_action(actions_analyzer.last_action)
-        ]  # NOTE: originally was last_action but that variable was not defined
+        actions_analyzer.last_action = convert_last_action_to_complete_action(actions_analyzer.last_action)
 
         new_actions = parse_level_3_actions(
             {"current_session": new_actions}, similarity_fcn=get_spacy_similarity
         )["current_session"]
 
-        parsed_actions += new_actions[:-1]  # update the parsed actions parameter
+        SESSIONS[session_id]["parsed_actions"] += new_actions[:-1]  # update the parsed actions parameter
 
         # check for level 3 actions
         detected_plugins = check_for_level_3_actions(
@@ -514,15 +538,6 @@ if __name__ == "__main__":
 
     global verbose
     verbose = args.verbose
-
-    #### NEW VARIABLES ####
-    global parsed_actions
-    parsed_actions = []
-    global current_action_in_progress
-    current_action_in_progress = None
-    global intervention_on
-    intervention_on = False
-    #### NEW VARIABLES END ####
 
     app.run(
         host="0.0.0.0",

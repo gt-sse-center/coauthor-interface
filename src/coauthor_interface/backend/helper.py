@@ -291,9 +291,9 @@ def check_for_level_3_actions(action_lst, plugin_lst, n_actions=5, pattern_count
 
     counter = defaultdict(int)
 
-    for action in action_lst[:n_actions]:
+    for action in action_lst[-n_actions:]:
         for plugin in plugin_lst:
-            if action["level_3_action_type"] == plugin.get_plugin_name():
+            if action.get("level_3_action_type") == plugin.get_plugin_name():
                 counter[plugin.get_plugin_name()] += 1
 
     true_plugins = [
