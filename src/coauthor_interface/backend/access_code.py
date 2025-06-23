@@ -22,6 +22,7 @@ class AccessCodeConfig:
         self.stop = ["."]
 
         self.additional_data = None
+        self.show_interventions = False
 
         self.update(row)
 
@@ -40,6 +41,7 @@ class AccessCodeConfig:
             "stop": self.stop,
             "engine": self.engine,
             "additional_data": self.additional_data,
+            "show_interventions": self.show_interventions,
         }
 
     def update(self, row):
@@ -73,3 +75,6 @@ class AccessCodeConfig:
 
         if "engine" in row:
             self.engine = row["engine"]
+
+        if "show_interventions" in row:
+            self.show_interventions = row["show_interventions"].lower() == "true"

@@ -9,6 +9,7 @@ class InterventionEnum(str, Enum):
     TOAST = "toast"
     NONE = "none"
     ALERT = "alert"
+    MODIFY_QUERY = "modify_query"
 
 
 @dataclass

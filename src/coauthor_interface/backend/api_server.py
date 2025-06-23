@@ -56,6 +56,8 @@ from coauthor_interface.backend.reader import (
     update_metadata,
 )
 
+from coauthor_interface.thought_toolkit.PluginInterface import InterventionEnum
+
 warnings.filterwarnings("ignore", category=FutureWarning)
 
 DEV_MODE = os.getenv("DEV_MODE", "false").lower() == "true"
@@ -113,8 +115,6 @@ def start_session():
         "start_timestamp": time(),
         "last_query_timestamp": time(),
         "verification_code": verification_code,
-        "intervention": "alert_writer",
-        "intervention_on": True,
         "parsed_actions": [],
         "current_action_in_progress": None,
     }
@@ -174,10 +174,9 @@ def end_session():
 
     # Remove a finished session
     try:
-        # NOTE: Somehow end_session is called twice;
-        # Do not pop session_id from SESSIONS to prevent exception
         session = SESSIONS[session_id]
         results["verification_code"] = session["verification_code"]
+        SESSIONS.pop(session_id)
         print_current_sessions(SESSIONS, f"Session {session_id} has been saved successfully.")
     except Exception as e:
         print(e)
@@ -244,7 +243,6 @@ def query():
     if not stop_sequence:
         stop_sequence = None
 
-    ########################################################
     # Step 2
     actions_analyzer = SameSentenceMergeAnalyzer(
         last_action=SESSIONS[session_id]["current_action_in_progress"],
@@ -271,14 +269,19 @@ def query():
         new_actions, ACTIVE_PLUGINS, n_actions=1, pattern_count_threshold=1
     )
 
-    #########################################################
-
     # Parse doc
     doc = content["doc"]
-    if SESSIONS[session_id]["intervention_on"] == "modify_query" and len(detected_plugins) > 0:
+
+    modify_prompt = SESSIONS[session_id]["show_interventions"] and True in [
+        plugin.intervention_action().intervention_type == InterventionEnum.MODIFY_QUERY
+        for plugin in detected_plugins
+    ]
+
+    if modify_prompt:
         results = parse_modified_prompt(doc, max_tokens, context_window_size)
     else:
         results = parse_prompt(example_text + doc, max_tokens, context_window_size)
+
     prompt = results["effective_prompt"]
 
     # Query GPT-3
@@ -461,7 +464,7 @@ def parse_logs():
             new_actions, ACTIVE_PLUGINS, n_actions=1, pattern_count_threshold=1
         )
 
-        if SESSIONS[session_id]["intervention"] == "alert_writer" and len(detected_plugins) > 0:
+        if SESSIONS[session_id]["show_interventions"] and len(detected_plugins) > 0:
             return jsonify(
                 {
                     "status": SUCCESS,
