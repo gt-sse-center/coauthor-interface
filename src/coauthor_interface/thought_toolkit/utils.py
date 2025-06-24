@@ -1,3 +1,16 @@
+"""
+General-purpose utility functions for the thought toolkit.
+
+This module contains stateless, general-purpose utilities for:
+- Text processing (sentence tokenization, regex operations)
+- Time and timestamp conversion utilities
+- Natural language processing (spaCy similarity calculations)
+- JSON serialization helpers
+
+These functions are pure utilities that can be used across different
+modules without side effects or dependencies on specific data structures.
+"""
+
 import re
 from datetime import datetime
 

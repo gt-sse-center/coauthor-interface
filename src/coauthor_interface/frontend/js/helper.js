@@ -1,3 +1,16 @@
+/**
+ * Frontend helper functions for URL parsing and UI state management.
+ * 
+ * This module contains client-side utilities for:
+ * - Extracting parameters from URL query strings
+ * - Managing session state and access codes
+ * - UI counter and display state management
+ * - Frontend-specific data formatting and validation
+ * 
+ * These functions are used by the frontend JavaScript code to handle
+ * user interface interactions and URL-based configuration.
+ */
+
 // Get arguments from URL
 function getCondition() {
   let urlString = window.location.href;

@@ -1,3 +1,16 @@
+"""
+Helper functions for parsing logs and extracting action information.
+
+This module contains specialized functions for:
+- Text operation processing (apply_text_operations, apply_logs_to_writing)
+- Action type extraction and classification from log entries
+- Text modification analysis (insertions, deletions, character/word counts)
+- Converting incomplete actions to complete action dictionaries
+
+These functions are specifically designed for the log parsing pipeline
+and action analysis components of the thought toolkit.
+"""
+
 # Need helper functions from utils.py
 from coauthor_interface.thought_toolkit import utils
 
