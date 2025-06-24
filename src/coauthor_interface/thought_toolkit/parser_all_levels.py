@@ -2,7 +2,7 @@
 
 import difflib
 
-from coauthor_interface.thought_toolkit.helper import apply_logs_to_writing
+from coauthor_interface.thought_toolkit.parser_helper import apply_logs_to_writing
 from coauthor_interface.thought_toolkit.level_2_comparisons import (
     get_action_expansion,
     get_coordination_scores,
