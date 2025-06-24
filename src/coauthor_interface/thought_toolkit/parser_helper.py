@@ -1,99 +1,76 @@
-import ipdb
-
 # Need helper functions from utils.py
 from coauthor_interface.thought_toolkit import utils
 
 
-def apply_text_operations(doc, mask, ops, source, debug=False):
-    """
-    Applies a sequence of text operations (retain, insert, delete) to a document.
+def apply_text_operations(text, mask, ops, source, debug=False):
+    """Applies a sequence of text operations (retain, insert, delete) to a document."""
 
-    Args:
-        doc (str): The original text document.
-        mask (str): The mask representing the source of modifications.
-        ops (list): A list of operations containing 'retain', 'insert', or 'delete' actions.
-        source (str): The source of the modification (e.g., 'api' or 'user').
-        debug (bool, optional): If True, prints debug information. Defaults to False.
-
-    Returns:
-        tuple:
-            - str: The updated document after applying the operations.
-            - str: The updated mask reflecting the modifications.
-    """
-    original_doc = doc
+    original_text = text
     original_mask = mask
-    new_doc = ""
+    new_text = ""
     new_mask = ""
 
-    for _, op in enumerate(ops):
+    for i, op in enumerate(ops):
         if "retain" in op:
             num_char = op["retain"]
             if debug:
                 print("@ Retain:", num_char)
-            retain_doc = original_doc[:num_char]
+            retain_text = original_text[:num_char]
             retain_mask = original_mask[:num_char]
-            original_doc = original_doc[num_char:]
+            original_text = original_text[num_char:]
             original_mask = original_mask[num_char:]
-            new_doc = new_doc + retain_doc
+            new_text = new_text + retain_text
             new_mask = new_mask + retain_mask
 
         elif "insert" in op:
-            insert_doc = op["insert"]
+            insert_text = op["insert"]
             if debug:
-                print("@ Insert:", insert_doc)
+                print("@ Insert:", insert_text)
             if source == "api":
                 # Use '*' for API insertions
-                insert_mask = "*" * len(insert_doc)
+                insert_mask = "*" * len(insert_text)
             else:
                 # Use '_' for user insertions
-                insert_mask = "_" * len(insert_doc)
+                insert_mask = "_" * len(insert_text)
 
-            if isinstance(insert_doc, dict):
-                if "image" in insert_doc:
+            if isinstance(insert_text, dict):
+                if "image" in insert_text:
                     print("Skipping invalid object insertion (image)")
                 else:
+                    import ipdb
+
                     ipdb.set_trace()
-                    print(insert_doc)
+                    print(insert_text)
             else:
-                new_doc = new_doc + insert_doc
+                new_text = new_text + insert_text
                 new_mask = new_mask + insert_mask
 
         elif "delete" in op:
             num_char = op["delete"]
             if debug:
                 print("@ Delete:", num_char)
-            if original_doc:
-                original_doc = original_doc[num_char:]
+            if original_text:
+                original_text = original_text[num_char:]
                 original_mask = original_mask[num_char:]
             else:
-                new_doc = new_doc[:-num_char]
+                new_text = new_text[:-num_char]
                 new_mask = new_mask[:-num_char]
 
         else:
             print("@ Unknown operation:", op)
 
         if debug:
-            print("Document:", new_doc + original_doc, "\n")
+            print("Document:", new_text + original_text, "\n")
 
     if debug:
-        print("Final document:", new_doc + original_doc)
+        print("Final document:", new_text + original_text)
 
-    return new_doc + original_doc, new_mask + original_mask
+    return new_text + original_text, new_mask + original_mask
 
 
 def apply_logs_to_writing(current_writing, current_mask, all_logs):
     """
     Applies a series of logged text operations to a given document.
-
-    Args:
-        current_writing (str): The current state of the document before applying logs.
-        current_mask (str): The corresponding mask tracking source modifications.
-        all_logs (list): A list of logs containing 'textDelta' operations.
-
-    Returns:
-        tuple:
-            - str: The modified document after applying all logged operations.
-            - str: The updated mask reflecting changes.
     """
     for log in all_logs:
         if "textDelta" in log and "ops" in log["textDelta"]:
