@@ -1,7 +1,7 @@
 import json
 from pathlib import Path
 import pytest
-from coauthor_interface.thought_toolkit.parse_all_consolidated import (
+from coauthor_interface.thought_toolkit.run_post_session_analysis import (
     parse_level_1_actions,
     parse_level_2_actions_from_level_1,
     parse_level_3_actions_from_level_2,

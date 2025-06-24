@@ -124,6 +124,6 @@ def process_logs(input_file: Path, output_dir: Path) -> None:
 if __name__ == "__main__":
     # Example usage
     script_dir = Path(__file__).parent
-    input_file = script_dir / "small_logs_for_test.json"
+    input_file = script_dir / "raw_keylogs_for_analysis.json"
     output_dir = script_dir / "output"
     process_logs(input_file, output_dir)
