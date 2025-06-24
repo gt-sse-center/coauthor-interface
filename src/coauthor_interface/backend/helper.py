@@ -1,5 +1,16 @@
 """
 Helper functions for the backend.
+
+This module contains backend-specific utility functions for:
+- Session management (UUID generation, session tracking, verbose printing)
+- Log file operations (retrieving paths, saving logs, appending sessions)
+- Statistics computation and metadata handling
+- Text and mask operations for document processing
+- Configuration and context window management
+- Pattern detection for level 3 actions and mindless behaviors
+
+These functions are primarily used by the Flask API server for managing
+user sessions, processing logs, and handling document operations.
 """
 
 from collections import defaultdict
