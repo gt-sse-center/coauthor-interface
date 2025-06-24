@@ -68,13 +68,6 @@ def parser_helper_module(utils_module):
     return module
 
 
-@pytest.fixture()
-def helper_module(utils_module):
-    """Reload ``helper`` once ``utils`` has been imported."""
-    module = importlib.reload(importlib.import_module("coauthor_interface.thought_toolkit.helper"))
-    return module
-
-
 def test_sent_tokenize(utils_module):
     """Verify that ``sent_tokenize`` splits text on punctuation."""
 
@@ -225,10 +218,10 @@ def test_extract_and_clean_text_modifications_from_action(parser_helper_module):
     assert result == ("DELETE", "llo", 3, 1)
 
 
-def test_helper_apply_text_operations(helper_module):
+def test_helper_apply_text_operations(parser_helper_module):
     """The lightweight ``helper`` module mirrors ``parser_helper`` behaviour."""
 
-    text, mask = helper_module.apply_text_operations(
+    text, mask = parser_helper_module.apply_text_operations(
         "Hello",
         "AAAAA",
         [{"retain": 5}, {"insert": " world"}, {"delete": 3}],
@@ -240,7 +233,7 @@ def test_helper_apply_text_operations(helper_module):
     assert mask == "AAAAA___"
 
 
-def test_helper_apply_logs_to_writing(helper_module):
+def test_helper_apply_logs_to_writing(parser_helper_module):
     """Wrapper over ``apply_text_operations`` should produce the same result."""
 
     logs = [
@@ -248,7 +241,7 @@ def test_helper_apply_logs_to_writing(helper_module):
         {"eventSource": "user", "textDelta": {"ops": [{"delete": 3}]}},
     ]
 
-    text, mask = helper_module.apply_logs_to_writing("Hello", "AAAAA", logs)
+    text, mask = parser_helper_module.apply_logs_to_writing("Hello", "AAAAA", logs)
 
     assert text == "lo world"
     assert mask == "AA______"

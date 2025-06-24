@@ -212,15 +212,12 @@ def query():
         )
         return jsonify(results)
 
-    #########################################################
-    # TODO: what is going on here?
     example = content["example"]
     example_text = examples[example]  # pylint: disable=possibly-used-before-assignment
 
     # Overwrite example text if it is manually provided
     if "example_text" in content:
         example_text = content["example_text"]
-    #########################################################
 
     # Get configurations
     n = int(content["n"])
@@ -244,30 +241,7 @@ def query():
         stop_sequence = None
 
     # Step 2
-    actions_analyzer = SameSentenceMergeAnalyzer(
-        last_action=SESSIONS[session_id]["current_action_in_progress"],
-        raw_logs=logs,
-    )
-
-    # Step 3
-    SESSIONS[session_id]["current_action_in_progress"] = actions_analyzer.last_action
-    new_actions = actions_analyzer.actions_lst
-    for action in new_actions:
-        action["level_1_action_type"] = action["action_type"]
-
-    actions_analyzer.last_action = convert_last_action_to_complete_action(actions_analyzer.last_action)
-
-    new_actions = parse_level_3_actions(
-        {"current_session": new_actions}, similarity_fcn=get_spacy_similarity
-    )["current_session"]
-
-    if len(new_actions) > 0:
-        SESSIONS[session_id]["parsed_actions"] += new_actions[:-1]  # update the parsed actions parameter
-
-    # check for level 3 actions
-    detected_plugins = check_for_level_3_actions(
-        new_actions, ACTIVE_PLUGINS, n_actions=1, pattern_count_threshold=1
-    )
+    detected_plugins = analyze_and_update_actions(session_id, logs)
 
     # Parse doc
     doc = content["doc"]
@@ -440,29 +414,7 @@ def parse_logs():
 
     try:
         # Step 2
-        actions_analyzer = SameSentenceMergeAnalyzer(
-            last_action=SESSIONS[session_id]["current_action_in_progress"],
-            raw_logs=logs,
-        )
-
-        # Step 3
-        SESSIONS[session_id]["current_action_in_progress"] = actions_analyzer.last_action
-        new_actions = actions_analyzer.actions_lst
-        for action in new_actions:
-            action["level_1_action_type"] = action["action_type"]
-
-        actions_analyzer.last_action = convert_last_action_to_complete_action(actions_analyzer.last_action)
-
-        new_actions = parse_level_3_actions(
-            {"current_session": new_actions}, similarity_fcn=get_spacy_similarity
-        )["current_session"]
-
-        SESSIONS[session_id]["parsed_actions"] += new_actions[:-1]  # update the parsed actions parameter
-
-        # check for level 3 actions
-        detected_plugins = check_for_level_3_actions(
-            new_actions, ACTIVE_PLUGINS, n_actions=1, pattern_count_threshold=1
-        )
+        detected_plugins = analyze_and_update_actions(session_id, logs)
 
         if SESSIONS[session_id]["show_interventions"] and len(detected_plugins) > 0:
             return jsonify(
@@ -478,6 +430,36 @@ def parse_logs():
     except Exception as e:
         print(f"# Parsing failed: {e}")
         return jsonify({"status": FAILURE, "alert_author": False})
+
+
+def analyze_and_update_actions(session_id, logs):
+    """
+    Helper function to analyze actions and update session state.
+    Returns (new_actions, detected_plugins).
+    """
+    actions_analyzer = SameSentenceMergeAnalyzer(
+        last_action=SESSIONS[session_id]["current_action_in_progress"],
+        raw_logs=logs,
+    )
+
+    SESSIONS[session_id]["current_action_in_progress"] = actions_analyzer.last_action
+    new_actions = actions_analyzer.actions_lst
+    for action in new_actions:
+        action["level_1_action_type"] = action["action_type"]
+
+    actions_analyzer.last_action = convert_last_action_to_complete_action(actions_analyzer.last_action)
+
+    new_actions = parse_level_3_actions(
+        {"current_session": new_actions}, similarity_fcn=get_spacy_similarity
+    )["current_session"]
+
+    if len(new_actions) > 0:
+        SESSIONS[session_id]["parsed_actions"] += new_actions[:-1]  # update the parsed actions parameter
+
+    detected_plugins = check_for_level_3_actions(
+        new_actions, ACTIVE_PLUGINS, n_actions=1, pattern_count_threshold=1
+    )
+    return detected_plugins
 
 
 if __name__ == "__main__":
