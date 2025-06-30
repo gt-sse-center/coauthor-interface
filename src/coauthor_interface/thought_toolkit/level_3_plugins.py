@@ -88,6 +88,6 @@ class AnyInsert(Plugin):
     @staticmethod
     def intervention_action() -> Intervention:
         return Intervention(
-            intervention_type=InterventionEnum.TOAST,
-            intervention_message="Detected an insert text",
+            intervention_type=InterventionEnum.ALERT,
+            intervention_message="Detected a text insertion",
         )

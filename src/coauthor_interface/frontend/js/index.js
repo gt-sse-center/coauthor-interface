@@ -16,9 +16,10 @@ $(function () {
     $('#setting-btn').click(function (e) {
       $('#control').toggleClass('show');
     });
-    // Only enable the save button if the session hasn't been ended
+    // Only enable the buttons if the session hasn't been ended
     if (!sessionEnded) {
       $('#finish-btn').prop('disabled', false);
+      $('#end-session-btn').prop('disabled', false);
       $('#finish-replay-btn').prop('disabled', false);
     }
   }
@@ -108,6 +109,9 @@ $(function () {
     openShortcuts();
   });
   $('#finish-btn').click(function (e) {
+    saveWork();
+  });
+  $('#end-session-btn').click(function (e) {
     endSession();
   });
   $('#finish-replay-btn').click(function (e) {

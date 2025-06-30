@@ -715,3 +715,124 @@ def test_parse_logs_invalid_session(client):
     data = response.get_json()
     assert data["status"] is False
     assert data["alert_author"] is False
+
+
+@patch("coauthor_interface.backend.api_server.save_log_to_jsonl")
+@patch("coauthor_interface.backend.api_server.print_verbose")
+@patch("coauthor_interface.backend.api_server.print_current_sessions")
+@patch("coauthor_interface.backend.api_server.gc.collect")
+def test_end_session_keep_session(
+    mock_gc,
+    mock_print_current_sessions,
+    mock_print_verbose,
+    mock_save_log_to_jsonl,
+    client,
+):
+    # Arrange: mock data
+    session_id = "keep123"
+    fake_log = [{"event": "key_press", "value": "a"}]
+    srv.proj_dir = "some_fake_proj_dir"
+
+    # Clear (since SESSIONS is a global variable) and populate SESSIONS with a fake session
+    srv.SESSIONS.clear()
+    srv.SESSIONS[session_id] = {
+        "verification_code": "keep123",
+    }
+
+    payload = {
+        "sessionId": session_id,
+        "logs": fake_log,
+        "remove_session": False,  # Don't remove the session
+    }
+
+    response = client.post("/api/end_session", json=payload)
+
+    assert response.status_code == 200
+    data = response.get_json()
+    assert data["status"]
+    assert "path" in data
+    assert data["verification_code"] == "keep123"
+
+    # Verify that the session is still in SESSIONS (not removed)
+    assert session_id in srv.SESSIONS
+    assert srv.SESSIONS[session_id]["verification_code"] == "keep123"
+
+
+@patch("coauthor_interface.backend.api_server.save_log_to_jsonl")
+@patch("coauthor_interface.backend.api_server.print_verbose")
+@patch("coauthor_interface.backend.api_server.print_current_sessions")
+@patch("coauthor_interface.backend.api_server.gc.collect")
+def test_end_session_remove_session(
+    mock_gc,
+    mock_print_current_sessions,
+    mock_print_verbose,
+    mock_save_log_to_jsonl,
+    client,
+):
+    # Arrange: mock data
+    session_id = "remove123"
+    fake_log = [{"event": "key_press", "value": "a"}]
+    srv.proj_dir = "some_fake_proj_dir"
+
+    # Clear (since SESSIONS is a global variable) and populate SESSIONS with a fake session
+    srv.SESSIONS.clear()
+    srv.SESSIONS[session_id] = {
+        "verification_code": "remove123",
+    }
+
+    payload = {
+        "sessionId": session_id,
+        "logs": fake_log,
+        "remove_session": True,  # Remove the session
+    }
+
+    response = client.post("/api/end_session", json=payload)
+
+    assert response.status_code == 200
+    data = response.get_json()
+    assert data["status"]
+    assert "path" in data
+    assert data["verification_code"] == "remove123"
+
+    # Verify that the session is removed from SESSIONS
+    assert session_id not in srv.SESSIONS
+
+
+@patch("coauthor_interface.backend.api_server.save_log_to_jsonl")
+@patch("coauthor_interface.backend.api_server.print_verbose")
+@patch("coauthor_interface.backend.api_server.print_current_sessions")
+@patch("coauthor_interface.backend.api_server.gc.collect")
+def test_end_session_default_behavior(
+    mock_gc,
+    mock_print_current_sessions,
+    mock_print_verbose,
+    mock_save_log_to_jsonl,
+    client,
+):
+    # Arrange: mock data
+    session_id = "default123"
+    fake_log = [{"event": "key_press", "value": "a"}]
+    srv.proj_dir = "some_fake_proj_dir"
+
+    # Clear (since SESSIONS is a global variable) and populate SESSIONS with a fake session
+    srv.SESSIONS.clear()
+    srv.SESSIONS[session_id] = {
+        "verification_code": "default123",
+    }
+
+    payload = {
+        "sessionId": session_id,
+        "logs": fake_log,
+        # No remove_session parameter - should default to True
+    }
+
+    response = client.post("/api/end_session", json=payload)
+
+    assert response.status_code == 200
+    data = response.get_json()
+    assert data["status"]
+    assert "path" in data
+    assert data["verification_code"] == "default123"
+
+    # Verify that the session is removed from SESSIONS (default behavior)
+    assert session_id not in srv.SESSIONS
