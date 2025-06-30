@@ -148,6 +148,7 @@ def end_session():
     content = request.json
     session_id = content["sessionId"]
     log = content["logs"]
+    remove_session = content.get("remove_session", True)  # Default to True for backward compatibility
 
     # pylint: disable=possibly-used-before-assignment
     path = os.path.join(proj_dir, session_id) + ".jsonl"
@@ -172,12 +173,21 @@ def end_session():
         verbose,
     )
 
-    # Remove a finished session
+    # Remove a finished session only if remove_session is True
     try:
         session = SESSIONS[session_id]
         results["verification_code"] = session["verification_code"]
-        SESSIONS.pop(session_id)
-        print_current_sessions(SESSIONS, f"Session {session_id} has been saved successfully.")
+        if remove_session:
+            SESSIONS.pop(session_id)
+            print_current_sessions(
+                SESSIONS,
+                f"Session {session_id} has been saved and removed successfully.",
+            )
+        else:
+            print_current_sessions(
+                SESSIONS,
+                f"Session {session_id} has been saved successfully (session kept active).",
+            )
     except Exception as e:
         print(e)
         print("# Error at the end of end_session; ignore")

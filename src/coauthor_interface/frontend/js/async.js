@@ -48,22 +48,33 @@ async function startSession(accessCode) {
   }
 }
 
-async function endSession() {
-  const results = await wwai.api.endSession(sessionId, logs);
+async function saveWork() {
+  const results = await wwai.api.endSession(sessionId, logs, false); // Don't remove session
   const verificationCode = results['verification_code'];
 
   $('#verification-code').removeClass('do-not-display');
   $('#verification-code').html('Verification code: ' + verificationCode);
 
-  // Disable the save button after session is ended
-  $('#finish-btn').prop('disabled', true);
+  // Don't disable the buttons after saving work - session is still active
+}
 
-  // Mark session as ended to prevent re-enabling the button
+async function endSession() {
+  const results = await wwai.api.endSession(sessionId, logs, true); // Remove session
+  const verificationCode = results['verification_code'];
+
+  $('#verification-code').removeClass('do-not-display');
+  $('#verification-code').html('Verification code: ' + verificationCode);
+
+  // Disable both buttons after session is ended
+  $('#finish-btn').prop('disabled', true);
+  $('#end-session-btn').prop('disabled', true);
+
+  // Mark session as ended to prevent re-enabling the buttons
   sessionEnded = true;
 }
 
 async function endSessionWithReplay() {
-  const results = await wwai.api.endSession(sessionId, logs);
+  const results = await wwai.api.endSession(sessionId, logs, true); // Remove session
   const verificationCode = results['verification_code'];
   // let replayLink = 'http://writingwithai-replay.glitch.me/?session_id=' + verificationCode;
   let replayLink = frontendURL + '/replay.html?session_id=' + verificationCode;
@@ -76,10 +87,11 @@ async function endSessionWithReplay() {
   $('#verification-code').removeClass('do-not-display');
   $('#verification-code').html('<a href="' + replayLink + '" target="_blank">' + replayLink + '</a>');
 
-  // Disable the save button after session is ended
+  // Disable both buttons after session is ended
   $('#finish-btn').prop('disabled', true);
+  $('#end-session-btn').prop('disabled', true);
 
-  // Mark session as ended to prevent re-enabling the button
+  // Mark session as ended to prevent re-enabling the buttons
   sessionEnded = true;
 }
 

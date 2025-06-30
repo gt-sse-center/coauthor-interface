@@ -1,6 +1,6 @@
 window.wwai = window.wwai || {};
 
-(function(wwai) {
+(function (wwai) {
   wwai.api = {};
 
   function getUrl(api_method) {
@@ -24,7 +24,7 @@ window.wwai = window.wwai || {};
     });
   }
 
-  wwai.api.startSession = async function(domain, accessCode) {
+  wwai.api.startSession = async function (domain, accessCode) {
     try {
       const session = await serverFetch("start_session", {
         'domain': domain,
@@ -37,11 +37,12 @@ window.wwai = window.wwai || {};
     }
   };
 
-  wwai.api.endSession = async function(sessionId, logs) {
+  wwai.api.endSession = async function (sessionId, logs, removeSession = true) {
     try {
       const results = await serverFetch("end_session", {
         'sessionId': sessionId,
         'logs': logs,
+        'remove_session': removeSession,
       });
       return results;
     } catch (e) {
@@ -50,7 +51,7 @@ window.wwai = window.wwai || {};
     }
   };
 
-  wwai.api.saveLog = async function() {
+  wwai.api.saveLog = async function () {
     console.log('[wwai.api.saveLog] sessionId:' + sessionId);
     console.log('[wwai.api.saveLog] logs.length:' + logs.length);
 
@@ -61,7 +62,7 @@ window.wwai = window.wwai || {};
     return results;
   };
 
-  wwai.api.getLog = async function(replaySessionId) {
+  wwai.api.getLog = async function (replaySessionId) {
     const results = await serverFetch("get_log", {
       'sessionId': replaySessionId,
       'domain': domain,
