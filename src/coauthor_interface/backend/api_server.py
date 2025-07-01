@@ -269,10 +269,12 @@ def query():
     prompt = results["effective_prompt"]
 
     # Query GPT-3
+    openai_start_time = time()
     try:
         if DEV_MODE:
             # DEV_MODE: return no suggestions
             suggestions = []
+            openai_end_time = time()
         else:
             client = OpenAI(api_key=api_keys[("openai", "default")])  # pylint: disable=possibly-used-before-assignment
             if "---" in prompt:  # If the demarcation is there, then suggest an insertion
@@ -303,15 +305,18 @@ def query():
                     logprobs=10,
                     stop=stop_sequence,
                 )
+            openai_end_time = time()
             suggestions = []
             for choice in response.choices:
                 suggestion = parse_suggestion(choice.text, results["after_prompt"], stop_rules)
                 probability = parse_probability(choice.logprobs)
                 suggestions.append((suggestion, probability, engine))
     except Exception as e:
+        openai_end_time = time()
         results["status"] = FAILURE
         results["message"] = str(e)
         print(e)
+        results["openai_time"] = openai_end_time - openai_start_time
         return jsonify(results)
 
     # Always return original model outputs
@@ -361,6 +366,7 @@ def query():
         "stop": stop,
     }
     results["counts"] = counts
+    results["openai_time"] = openai_end_time - openai_start_time
     print_verbose("Result", results, verbose)
     return jsonify(results)
 
@@ -457,7 +463,8 @@ def analyze_and_update_actions(session_id, logs):
     for action in new_actions:
         action["level_1_action_type"] = action["action_type"]
 
-    actions_analyzer.last_action = convert_last_action_to_complete_action(actions_analyzer.last_action)
+    if actions_analyzer.last_action is not None:
+        actions_analyzer.last_action = convert_last_action_to_complete_action(actions_analyzer.last_action)
 
     new_actions = parse_level_3_actions(
         {"current_session": new_actions}, similarity_fcn=get_spacy_similarity
