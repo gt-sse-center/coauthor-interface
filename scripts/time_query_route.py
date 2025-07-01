@@ -1,6 +1,5 @@
 import requests
 import concurrent.futures
-import time
 
 # Make sure backend is running on port 5555
 
@@ -96,7 +95,6 @@ def run_batch(batch_size):
 def main():
     for batch_size in BATCH_SIZES:
         run_batch(batch_size)
-        time.sleep(2)
 
 
 if __name__ == "__main__":
